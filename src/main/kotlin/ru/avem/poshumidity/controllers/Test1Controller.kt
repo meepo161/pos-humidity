@@ -5,7 +5,8 @@ import javafx.scene.text.Text
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.app.Pos.Companion.isAppRunning
 import ru.avem.poshumidity.communication.model.CommunicationModel
-import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model
+import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.HUMIDITY
+import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.TEMPERATURE
 import ru.avem.poshumidity.communication.model.devices.owen.pr.OwenPrModel
 import ru.avem.poshumidity.database.entities.Protocol
 import ru.avem.poshumidity.utils.*
@@ -71,6 +72,7 @@ class Test1Controller : TestController() {
     private var currentI3: Boolean = false
     //endregion
 
+
     private fun appendOneMessageToLog(tag: LogTag, message: String) {
         if (logBuffer == null || logBuffer != message) {
             logBuffer = message
@@ -93,7 +95,9 @@ class Test1Controller : TestController() {
         }
     }
 
-    var isDevicesResponding = owenPR.isResponding && dtv1.isResponding && dtv2.isResponding && dtv3.isResponding
+    fun isDevicesResponding(): Boolean {
+        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding
+    }
 
     private fun startPollDevices() {
         //region pr pool
@@ -101,9 +105,9 @@ class Test1Controller : TestController() {
             doorZone1 = value.toShort() and 2 > 0
             stopButton = value.toShort() and 16 > 0
             startButton = value.toShort() and 32 > 0
-//            if (doorZone1) {
-//                controller.cause = "Открыта дверь зоны 1" TODO раскомментировать
-//            }
+            if (doorZone1) {
+                controller.cause = "Открыта дверь зоны 1"
+            }
             if (stopButton) {
                 controller.cause = "Нажата кнопка СТОП"
             }
@@ -124,49 +128,31 @@ class Test1Controller : TestController() {
             }
         }
         //endregion
-
-        //region dtv pool
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV1, Dtv02Model.HUMIDITY) { value ->
-            measuringHumidity1 = value.toDouble()
-        }
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV2, Dtv02Model.HUMIDITY) { value ->
-            measuringHumidity2 = value.toDouble()
-        }
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV3, Dtv02Model.HUMIDITY) { value ->
-            measuringHumidity3 = value.toDouble()
-        }
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV1, Dtv02Model.TEMPERATURE) { value ->
-            measuringTemp1 = value.toDouble()
-        }
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV2, Dtv02Model.TEMPERATURE) { value ->
-            measuringTemp2 = value.toDouble()
-        }
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV3, Dtv02Model.TEMPERATURE) { value ->
-            measuringTemp3 = value.toDouble()
-        }
-        //endregion
     }
 
     @ExperimentalTime
     fun startTest() {
         thread(isDaemon = true) {
-            if (mainView.textFieldHumidity.text.isEmpty() || !mainView.textFieldHumidity.text.isDouble()) {
+            if (mainView.textFieldHumidity.text.isEmpty() || !mainView.textFieldHumidity.text.replace(",", ".")
+                    .isDouble()
+            ) {
                 runLater {
                     Toast.makeText("Введите влажность").show(Toast.ToastType.ERROR)
                 }
-            } else if (mainView.textFieldTime.text.isEmpty() || !mainView.textFieldTime.text.isDouble()) {
+            } else if (mainView.textFieldTime.text.isEmpty() || !mainView.textFieldTime.text.replace(",", ".")
+                    .isDouble()
+            ) {
                 runLater {
-                    Toast.makeText("Введите количество циклов время работы").show(Toast.ToastType.ERROR)
+                    Toast.makeText("Введите время работы").show(Toast.ToastType.ERROR)
                 }
             } else {
                 runLater {
                     mainView.buttonStart.isDisable = true
                     mainView.buttonStop.isDisable = false
                     mainView.mainMenubar.isDisable = true
-                    mainView.textFieldHumidity.isDisable = true
-                    mainView.textFieldTime.isDisable = true
+                    mainView.labelTestStatus.text = "Статус: работа"
                 }
-
+                controller.humidityNeed = mainView.textFieldHumidity.text.replace(",", ".").toDouble()
                 controller.isExperimentRunning = true
                 controller.clearTable()
 
@@ -185,16 +171,20 @@ class Test1Controller : TestController() {
                 }
 
                 var timeForDevices = 300
-                while (!isDevicesResponding && controller.isExperimentRunning && timeForDevices-- > 0) {
-                    CommunicationModel.checkDevices()
+                while (!isDevicesResponding() && controller.isExperimentRunning && timeForDevices-- > 0) {
+                    CommunicationModel.addWritingRegister(
+                        CommunicationModel.DeviceID.DD2,
+                        OwenPrModel.RESET_DOG,
+                        1.toShort()
+                    )
                     sleep(100)
                 }
 
-                if (!isDevicesResponding && controller.isExperimentRunning) {
-                    controller.cause = "Нет связи с устройствами"
+                if (!isDevicesResponding() && controller.isExperimentRunning) {
+                    controller.cause = "Нет связи с БСУ"
                 }
 
-                if (controller.isExperimentRunning && isDevicesResponding) {
+                if (controller.isExperimentRunning && isDevicesResponding()) {
                     CommunicationModel.addWritingRegister(
                         CommunicationModel.DeviceID.DD2,
                         OwenPrModel.RESET_DOG,
@@ -206,15 +196,14 @@ class Test1Controller : TestController() {
                     sleep(1000)
                 }
 
-
-                if (!startButton && controller.isExperimentRunning && isDevicesResponding) {
+                if (!startButton && controller.isExperimentRunning && isDevicesResponding()) {
                     runLater {
                         Toast.makeText("Нажмите кнопку ПУСК").show(Toast.ToastType.WARNING)
                     }
                 }
 
                 var timeToStart = 300
-                while (!startButton && controller.isExperimentRunning && isDevicesResponding && timeToStart-- > 0) {
+                while (!startButton && controller.isExperimentRunning && isDevicesResponding() && timeToStart-- > 0) {
                     appendOneMessageToLog(LogTag.DEBUG, "Нажмите кнопку ПУСК")
                     sleep(100)
                 }
@@ -223,60 +212,111 @@ class Test1Controller : TestController() {
                     controller.cause = "Не нажата кнопка ПУСК"
                 }
 
-                if (controller.isExperimentRunning && isDevicesResponding) {
+                if (controller.isExperimentRunning && isDevicesResponding()) {
                     appendMessageToLog(LogTag.DEBUG, "Подготовка стенда")
-                    getValuesInTable()
                 }
-
-                val allTime = mainView.textFieldTime.text.toInt() * 60 * 60
-                val callbackTimer = CallbackTimer(
-                    tickPeriod = 1.seconds, tickTimes = allTime,
+                var timeLeft = 0
+                var lastAllTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
+                controller.allTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
+                var callbackTimer = CallbackTimer(
+                    tickPeriod = 1.seconds, tickTimes = controller.allTime,
                     tickJob = {
                         if (!controller.isExperimentRunning) {
                             it.stop()
                         } else {
                             runLater {
                                 mainView.labelTimeRemaining.text =
-                                    "Осталось : " + toHHmmss((allTime - it.getCurrentTicks()) * 1000L)
+                                    "Осталось : " + toHHmmss((controller.allTime - it.getCurrentTicks()) * 1000L)
                             }
+                            timeLeft++
                         }
                     },
                     onFinishJob = {
                     })
 
-                while (controller.isExperimentRunning && callbackTimer.isRunning && isAppRunning) {
-                    if (measuringHumidity1 < mainView.textFieldHumidity.text.toDouble()) {
-                        owenPR.on1()
-                    } else {
-                        owenPR.off1()
+                while (controller.isExperimentRunning && callbackTimer.isRunning && isAppRunning && isDevicesResponding()) {
+                    if (controller.allTime != lastAllTime) {
+                        var ticksLeft = timeLeft
+                        lastAllTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
+                        callbackTimer.stop()
+                        callbackTimer = CallbackTimer(
+                            tickPeriod = 1.seconds, tickTimes = controller.allTime - ticksLeft,
+                            tickJob = {
+                                if (!controller.isExperimentRunning) {
+                                    it.stop()
+                                } else {
+                                    runLater {
+                                        mainView.labelTimeRemaining.text =
+                                            "Осталось : " + toHHmmss((controller.allTime - ticksLeft - it.getCurrentTicks()) * 1000L)
+                                    }
+                                    timeLeft++
+                                }
+                            },
+                            onFinishJob = {
+                            })
                     }
-                    if (measuringHumidity2 < mainView.textFieldHumidity.text.toDouble()) {
-                        owenPR.on2()
-                    } else {
-                        owenPR.off2()
-                    }
-                    if (measuringHumidity3 < mainView.textFieldHumidity.text.toDouble()) {
-                        owenPR.on3()
-                    } else {
-                        owenPR.off3()
-                    }
+
+                    val humidity1 = dtv1.getRegisterById(HUMIDITY)
+                    dtv1.readRegister(humidity1)
+                    measuringHumidity1 = humidity1.value.toDouble()
+                    val humidity2 = dtv2.getRegisterById(HUMIDITY)
+                    dtv2.readRegister(humidity2)
+                    measuringHumidity2 = humidity2.value.toDouble()
+                    val humidity3 = dtv2.getRegisterById(HUMIDITY)
+                    dtv2.readRegister(humidity3)
+                    measuringHumidity3 = humidity3.value.toDouble()
+
+                    val temp1 = dtv1.getRegisterById(TEMPERATURE)
+                    dtv1.readRegister(temp1)
+                    measuringTemp1 = temp1.value.toDouble()
+                    val temp2 = dtv2.getRegisterById(TEMPERATURE)
+                    dtv2.readRegister(temp2)
+                    measuringTemp2 = temp2.value.toDouble()
+                    val temp3 = dtv2.getRegisterById(TEMPERATURE)
+                    dtv2.readRegister(temp3)
+                    measuringTemp3 = temp3.value.toDouble()
 
                     sleep(1000)
 
-                    controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
-                    controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
+                    if (controller.humidityNeed > measuringHumidity1) {
+                        owenPR.on1()
+                        controller.tableValuesTest[0].generator.value = "Включен"
+                    } else if (controller.humidityNeed + 1 < measuringHumidity1) {
+                        owenPR.off1()
+                        controller.tableValuesTest[0].generator.value = "Отключен"
+                    }
+                    if (controller.humidityNeed > measuringHumidity2) {
+                        owenPR.on2()
+                        controller.tableValuesTest[1].generator.value = "Включен"
+                    } else if (controller.humidityNeed + 1 < measuringHumidity2) {
+                        owenPR.off2()
+                        controller.tableValuesTest[1].generator.value = "Отключен"
+                    }
+                    if (controller.humidityNeed > measuringHumidity3) {
+                        owenPR.on3()
+                        controller.tableValuesTest[2].generator.value = "Включен"
+                    } else if (controller.humidityNeed + 1 < measuringHumidity3) {
+                        owenPR.off3()
+                        controller.tableValuesTest[2].generator.value = "Отключен"
+                    }
 
-                    controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
-                    controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
-
-                    controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
-                    controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
+                    runLater {
+                        controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
+                        controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
+                        controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
+                        controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
+                        controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
+                        controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
+                    }
 
                     listOfValues1.add(String.format("%.1f", measuringHumidity1))
                     listOfValues2.add(String.format("%.1f", measuringHumidity2))
                     listOfValues3.add(String.format("%.1f", measuringHumidity3))
                 }
 
+                controller.tableValuesTest[0].generator.value = "Отключен"
+                controller.tableValuesTest[1].generator.value = "Отключен"
+                controller.tableValuesTest[2].generator.value = "Отключен"
                 owenPR.offAllKMs()
                 setResult()
 
@@ -295,8 +335,6 @@ class Test1Controller : TestController() {
                     mainView.buttonStart.isDisable = false
                     mainView.buttonStop.isDisable = true
                     mainView.mainMenubar.isDisable = false
-                    mainView.textFieldHumidity.isDisable = false
-                    mainView.textFieldTime.isDisable = false
                     mainView.labelTestStatus.text = "Статус: стоп"
                 }
             }
@@ -319,27 +357,15 @@ class Test1Controller : TestController() {
         }
     }
 
-    private fun getValuesInTable() {
-        thread(isDaemon = true) {
-            while (controller.isExperimentRunning) {
-                runLater {
-                    controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
-                    controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
-                }
-                sleep(100)
-            }
-        }
-    }
-
     private fun sleepWhile(timeSecond: Int) {
         var timer = timeSecond * 10
-        while (controller.isExperimentRunning && timer-- > 0 && isDevicesResponding) {
+        while (controller.isExperimentRunning && timer-- > 0 && isDevicesResponding()) {
             sleep(100)
         }
     }
 
     private fun setResult() {
-        if (!isDevicesResponding) {
+        if (!isDevicesResponding()) {
             appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: \nпотеряна связь с устройствами")
         } else if (controller.cause.isNotEmpty()) {
             appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: ${controller.cause}")
@@ -350,7 +376,7 @@ class Test1Controller : TestController() {
 
     private fun finalizeExperiment() {
         isExperimentEnded = true
-//        owenPR.offAllKMs()
+        owenPR.offAllKMs()
         CommunicationModel.clearPollingRegisters()
 
     }

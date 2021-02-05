@@ -250,7 +250,7 @@ class GraphHistoryWindow : View("История графика") {
                     do1 = values.size.toDouble()
                     tfDo.text = (values.size).toString()
                 }
-                for (i in ot1.toInt()..do1.toInt()) {
+                for (i in ot1.toInt() until do1.toInt()) {
                     listOfValues.add(String.format("%.1f", values[i]))
                 }
 

@@ -5,7 +5,8 @@ import javafx.beans.property.StringProperty
 data class TableValuesTest(
         var descriptor: StringProperty,
         var humidity: StringProperty,
-        var temperature: StringProperty
+        var temperature: StringProperty,
+        var generator: StringProperty
 )
 
 data class TableValuesTest1(
