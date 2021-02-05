@@ -12,6 +12,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.openxmlformats.schemas.drawingml.x2006.chart.CTBoolean
 import ru.avem.poshumidity.app.Pos
 import ru.avem.poshumidity.database.entities.Protocol
+import ru.avem.poshumidity.database.entities.ProtocolSingle
 import ru.avem.poshumidity.utils.Toast
 import ru.avem.poshumidity.utils.copyFileFromStream
 import java.io.ByteArrayOutputStream
@@ -49,6 +50,45 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
                 }
             }
             fillParameters3(wb, protocol.values1, protocol.values2, protocol.values3, 0, 15)
+            drawLineChart3(wb)
+            val outStream = ByteArrayOutputStream()
+            wb.write(outStream)
+            outStream.close()
+        }
+    } catch (e: FileNotFoundException) {
+        Toast.makeText("Не удалось сохранить протокол на диск")
+    }
+}
+
+fun saveProtocolAsWorkbook(protocolSingle: ProtocolSingle, path: String = "protocol.xlsx", start: Int, end: Int) {
+    val template = File(path)
+    copyFileFromStream(Pos::class.java.getResource("protocol.xlsx").openStream(), template)
+
+    try {
+        XSSFWorkbook(template).use { wb ->
+            val sheet = wb.getSheetAt(0)
+            for (iRow in 0 until 100) {
+                val row = sheet.getRow(iRow)
+                if (row != null) {
+                    for (iCell in 0 until 100) {
+                        val cell = row.getCell(iCell)
+                        if (cell != null && (cell.cellType == CellType.STRING)) {
+                            when (cell.stringCellValue) {
+                                "#PROTOCOL_NUMBER#" -> cell.setCellValue(protocolSingle.id.toString())
+                                "#DATE#" -> cell.setCellValue(protocolSingle.date)
+                                "#TIME#" -> cell.setCellValue(protocolSingle.time)
+
+                                else -> {
+                                    if (cell.stringCellValue.contains("#")) {
+                                        cell.setCellValue("")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            fillParameters(wb, protocolSingle.values, start, end)
             drawLineChart(wb)
             val outStream = ByteArrayOutputStream()
             wb.write(outStream)
@@ -56,6 +96,27 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
         }
     } catch (e: FileNotFoundException) {
         Toast.makeText("Не удалось сохранить протокол на диск")
+    }
+}
+
+fun fillParameters(wb: XSSFWorkbook, dots: String, start: Int, end: Int) {
+    var values = dots.removePrefix("[").removePrefix("'").removeSuffix("]")
+        .split(", ").map { it.replace(',', '.') }.map(String::toDouble)
+    val valuesForExcel = arrayListOf<Double>()
+    for (i in values.indices) {
+        valuesForExcel.add(values[i])
+    }
+    val sheet = wb.getSheetAt(0)
+    var row: Row
+    var cellStyle: XSSFCellStyle = generateStyles(wb) as XSSFCellStyle
+    var rowNum = sheet.lastRowNum + 1
+    row = sheet.createRow(rowNum)
+    var columnNum = 0
+    for (i in values.indices) {
+        columnNum = fillOneCell(row, columnNum, cellStyle, i + start)
+        columnNum = fillOneCell(row, columnNum, cellStyle, values[i])
+        row = sheet.createRow(++rowNum)
+        columnNum = 0
     }
 }
 
@@ -96,6 +157,23 @@ fun fillParameters3(wb: XSSFWorkbook, dots1: String, dots2: String, dots3: Strin
 
 }
 
+private fun drawLineChart(workbook: XSSFWorkbook) {
+    val sheet = workbook.getSheet("Sheet1")
+    val lastRowIndex = sheet.lastRowNum - 1
+    val timeData = DataSources.fromNumericCellRange(sheet, CellRangeAddress(16, lastRowIndex, 0, 0))
+    val valueData = DataSources.fromNumericCellRange(sheet, CellRangeAddress(16, lastRowIndex, 1, 1))
+
+    var lineChart = createLineChart(sheet)
+    drawLineChart3(lineChart, timeData, valueData)
+}
+
+private fun createLineChart(sheet: XSSFSheet): XSSFChart {
+    val drawing = sheet.createDrawingPatriarch()
+    val anchor = drawing.createAnchor(0, 0, 0, 0, 2, 16, 36, 26)
+
+    return drawing.createChart(anchor)
+}
+
 private fun fillOneCell(row: Row, columnNum: Int, cellStyle: XSSFCellStyle, points: Double): Int {
     val cell: Cell = row.createCell(columnNum)
     cell.cellStyle = cellStyle
@@ -122,7 +200,7 @@ private fun generateStyles(wb: XSSFWorkbook): CellStyle {
     return headStyle
 }
 
-private fun drawLineChart(workbook: XSSFWorkbook) {
+private fun drawLineChart3(workbook: XSSFWorkbook) {
     val sheet = workbook.getSheet("Sheet1")
     val lastRowIndex = sheet.lastRowNum - 1
 
@@ -136,21 +214,21 @@ private fun drawLineChart(workbook: XSSFWorkbook) {
     val valueData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 5, 5))
 
     val lineChart1 = createLineChart(sheet, 16, 26)
-    drawLineChart(lineChart1, timeData1, valueData1)
+    drawLineChart3(lineChart1, timeData1, valueData1)
     val lineChart2 = createLineChart(sheet, 27, 37)
-    drawLineChart(lineChart2, timeData2, valueData2)
+    drawLineChart3(lineChart2, timeData2, valueData2)
     val lineChart3 = createLineChart(sheet, 38, 48)
-    drawLineChart(lineChart3, timeData3, valueData3)
+    drawLineChart3(lineChart3, timeData3, valueData3)
 }
 
 private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int): XSSFChart {
     val drawing = sheet.createDrawingPatriarch()
-    val anchor = drawing.createAnchor(0, 0, 0, 0, 6, rowStart, 12, rowEnd)
+    val anchor = drawing.createAnchor(0, 0, 0, 0, 6, rowStart, 36, rowEnd)
 
     return drawing.createChart(anchor)
 }
 
-private fun drawLineChart(
+private fun drawLineChart3(
     lineChart: XSSFChart,
     xAxisData: ChartDataSource<Number>,
     yAxisData: ChartDataSource<Number>

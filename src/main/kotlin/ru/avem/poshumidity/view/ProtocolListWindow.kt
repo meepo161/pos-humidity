@@ -6,10 +6,13 @@ import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.TableView
 import javafx.stage.FileChooser
+import javafx.stage.Modality
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.database.entities.Protocol
+import ru.avem.poshumidity.database.entities.ProtocolSingle
+import ru.avem.poshumidity.database.entities.ProtocolsSingleTable
 import ru.avem.poshumidity.database.entities.ProtocolsTable
 import ru.avem.poshumidity.utils.Singleton
 import ru.avem.poshumidity.utils.callKeyBoard
@@ -95,15 +98,11 @@ class ProtocolListWindow : View("Протоколы графиков") {
                                     ProtocolsTable.id eq tableViewProtocols.selectedItem!!.id
                                 }.toList().asObservable()
                             }.first()
-                            close()
 
-//                            find<GraphHistoryWindow>().openModal(
-//                                modality = Modality.APPLICATION_MODAL, escapeClosesWindow = true,
-//                                resizable = false, owner = this@ProtocolListWindow.currentWindow
-//                            )
-
-                            saveProtocolAsWorkbook(Singleton.currentProtocol)
-                            openFile(File("protocol.xlsx"))
+                            find<GraphHistoryWindow>().openModal(
+                                modality = Modality.APPLICATION_MODAL, escapeClosesWindow = true,
+                                resizable = false, owner = this@ProtocolListWindow.currentWindow
+                            )
                         }
                     }
                 }
