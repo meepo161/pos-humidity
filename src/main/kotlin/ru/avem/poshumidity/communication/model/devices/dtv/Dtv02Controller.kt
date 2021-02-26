@@ -2,6 +2,7 @@ package ru.avem.poshumidity.communication.model.devices.dtv
 
 import ru.avem.kserialpooler.communication.adapters.modbusrtu.ModbusRTUAdapter
 import ru.avem.kserialpooler.communication.adapters.utils.ModbusRegister
+import ru.avem.kserialpooler.communication.utils.TransportException
 import ru.avem.poshumidity.communication.model.DeviceRegister
 import ru.avem.poshumidity.communication.model.IDeviceController
 import ru.avem.poshumidity.communication.utils.TypeByteOrder
@@ -45,7 +46,7 @@ class Dtv02Controller(
                 }
             }
             true
-        } catch (e: Exception) {
+        } catch (e: TransportException) {
             false
         }
     }
@@ -97,7 +98,7 @@ class Dtv02Controller(
             model.registers.values.firstOrNull()?.let {
                 readRegister(it)
             }
-        } catch (e: Exception) {
+        } catch (e: TransportException) {
         }
     }
 }

@@ -46,7 +46,7 @@ class Trm136Controller(
                 }
             }
             true
-        } catch (e: TransportException) {
+        } catch (e: ru.avem.kserialpooler.communication.utils.TransportException) {
             false
         }
     }
@@ -98,7 +98,7 @@ class Trm136Controller(
             model.registers.values.firstOrNull()?.let {
                 readRegister(it)
             }
-        } catch (ignored: TransportException) {
+        } catch (e: ru.avem.kserialpooler.communication.utils.TransportException) {
         }
     }
 }

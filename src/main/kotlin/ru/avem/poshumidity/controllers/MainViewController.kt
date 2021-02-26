@@ -72,35 +72,33 @@ class MainViewController : Controller() {
                 if (CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
                     runLater {
                         view.comIndicate.fill = State.OK.c
-                        if (!isExperimentRunning) {
+                    }
+                    if (doorZone) {
+                        runLater {
+                            view.labelTestStatusEnds.text = "Дверь открыта"
+                        }
+                    } else {
+                        runLater {
+                            view.labelTestStatusEnds.text = ""
+                        }
+                    }
+                    if (!isExperimentRunning && CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding && !doorZone) {
+                        runLater {
                             view.buttonStart.isDisable = false
                         }
+                    } else if (!isExperimentRunning && (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding || doorZone)) {
+                        runLater {
+                            view.buttonStart.isDisable = true
+                        }
+
                     }
                 } else {
                     runLater {
+                        cause = "Нет связи"
                         view.comIndicate.fill = State.BAD.c
-                        if (!isExperimentRunning) {
-                            view.buttonStart.isDisable = true
-                        }
-                    }
-                }
-                if (doorZone && CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
-                    runLater {
-                        view.labelTestStatusEnds.text = "Дверь зоны: открыта"
-                        if (!isExperimentRunning) {
-                            view.buttonStart.isDisable = true
-                        }
-                    }
-                } else if (!doorZone && CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
-                    runLater {
-                        view.labelTestStatusEnds.text = "Дверь зоны: закрыта "
-                        if (!isExperimentRunning) {
-                            view.buttonStart.isDisable = false
-                        }
-                    }
-                } else {
-                    runLater {
-                        view.labelTestStatusEnds.text = "Дверь зоны: неизвестно "
+                        view.labelTestStatusEnds.text = "Нет связи со стендом. Проверьте подключение."
+                        view.buttonStart.isDisable = true
+                        view.buttonStop.isDisable = true
                     }
                 }
             }

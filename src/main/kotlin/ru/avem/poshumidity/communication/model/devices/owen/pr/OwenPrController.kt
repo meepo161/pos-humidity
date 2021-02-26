@@ -151,8 +151,8 @@ class OwenPrController(
 
 
     fun initOwenPR() {
-        writeRegister(getRegisterById(OwenPrModel.RES_REGISTER), 0)
         writeRegister(getRegisterById(OwenPrModel.RES_REGISTER), 1)
+        writeRegister(getRegisterById(OwenPrModel.RES_REGISTER), 0)
     }
 
     fun resetKMS() {

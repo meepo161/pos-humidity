@@ -96,7 +96,10 @@ class Test1Controller : TestController() {
     }
 
     fun isDevicesResponding(): Boolean {
-        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding
+        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding &&
+        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding &&
+        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding &&
+        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding
     }
 
     private fun startPollDevices() {
@@ -106,25 +109,10 @@ class Test1Controller : TestController() {
             stopButton = value.toShort() and 16 > 0
             startButton = value.toShort() and 32 > 0
             if (doorZone1) {
-                controller.cause = "Открыта дверь зоны 1"
+                controller.cause = "Открыта дверь зоны"
             }
             if (stopButton) {
                 controller.cause = "Нажата кнопка СТОП"
-            }
-        }
-
-        CommunicationModel.startPoll(CommunicationModel.DeviceID.DD2, OwenPrModel.FIXED_STATES_REGISTER_2) { value ->
-            currentI1 = value.toShort() and 1 > 0
-            currentI2 = value.toShort() and 2 > 0
-            currentI3 = value.toShort() and 4 > 0
-            if (currentI1) {
-                controller.cause = "Токовая защита лопасти 1"
-            }
-            if (currentI2) {
-                controller.cause = "Токовая защита лопасти 2"
-            }
-            if (currentI3) {
-                controller.cause = "Токовая защита лопасти 3"
             }
         }
         //endregion
@@ -167,17 +155,32 @@ class Test1Controller : TestController() {
                 isExperimentEnded = false
 
                 if (controller.isExperimentRunning) {
+                    startPollDevices()
                     appendMessageToLog(LogTag.DEBUG, "Инициализация устройств")
+                    sleep(1000)
                 }
 
-                var timeForDevices = 300
-                while (!isDevicesResponding() && controller.isExperimentRunning && timeForDevices-- > 0) {
-                    CommunicationModel.addWritingRegister(
-                        CommunicationModel.DeviceID.DD2,
-                        OwenPrModel.RESET_DOG,
-                        1.toShort()
-                    )
+                var timeToPrepare = 300
+                while (!isDevicesResponding() && controller.isExperimentRunning && timeToPrepare-- > 0) {
                     sleep(100)
+                }
+
+                if (!isDevicesResponding()) {
+                    var cause = ""
+                    cause += "Не отвечают приборы: "
+                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
+                        cause += "ПР "
+                    }
+                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding) {
+                        cause += "ДТВ1 "
+                    }
+                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding) {
+                        cause += "ДТВ2 "
+                    }
+                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding) {
+                        cause += "ДТВ3 "
+                    }
+                    controller.cause = cause
                 }
 
                 if (!isDevicesResponding() && controller.isExperimentRunning) {
@@ -191,7 +194,6 @@ class Test1Controller : TestController() {
                         1.toShort()
                     )
                     owenPR.initOwenPR()
-                    sleep(1000)
                     startPollDevices()
                     sleep(1000)
                 }
@@ -208,7 +210,7 @@ class Test1Controller : TestController() {
                     sleep(100)
                 }
 
-                if (!startButton) {
+                if (!startButton && controller.isExperimentRunning && isDevicesResponding()) {
                     controller.cause = "Не нажата кнопка ПУСК"
                 }
 
@@ -262,8 +264,8 @@ class Test1Controller : TestController() {
                     val humidity2 = dtv2.getRegisterById(HUMIDITY)
                     dtv2.readRegister(humidity2)
                     measuringHumidity2 = humidity2.value.toDouble()
-                    val humidity3 = dtv2.getRegisterById(HUMIDITY)
-                    dtv2.readRegister(humidity3)
+                    val humidity3 = dtv3.getRegisterById(HUMIDITY)
+                    dtv3.readRegister(humidity3)
                     measuringHumidity3 = humidity3.value.toDouble()
 
                     val temp1 = dtv1.getRegisterById(TEMPERATURE)
@@ -272,8 +274,8 @@ class Test1Controller : TestController() {
                     val temp2 = dtv2.getRegisterById(TEMPERATURE)
                     dtv2.readRegister(temp2)
                     measuringTemp2 = temp2.value.toDouble()
-                    val temp3 = dtv2.getRegisterById(TEMPERATURE)
-                    dtv2.readRegister(temp3)
+                    val temp3 = dtv3.getRegisterById(TEMPERATURE)
+                    dtv3.readRegister(temp3)
                     measuringTemp3 = temp3.value.toDouble()
 
                     sleep(1000)
@@ -325,8 +327,12 @@ class Test1Controller : TestController() {
                 }
 
                 if (controller.isExperimentRunning) {
-                    finalizeExperiment()
+                    owenPR.offAllKMs()
                 }
+
+                isExperimentEnded = true
+                CommunicationModel.clearPollingRegisters()
+                callbackTimer.stop()
 
                 appendMessageToLog(LogTag.MESSAGE, "Испытание завершено")
 
@@ -365,21 +371,15 @@ class Test1Controller : TestController() {
     }
 
     private fun setResult() {
-        if (!isDevicesResponding()) {
-            appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: \nпотеряна связь с устройствами")
-        } else if (controller.cause.isNotEmpty()) {
+        if (controller.cause.isNotEmpty()) {
             appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: ${controller.cause}")
+        } else if (!isDevicesResponding()) {
+            appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине:потеряна связь с устройствами")
         } else {
             appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
         }
     }
 
-    private fun finalizeExperiment() {
-        isExperimentEnded = true
-        owenPR.offAllKMs()
-        CommunicationModel.clearPollingRegisters()
-
-    }
 }
 
 

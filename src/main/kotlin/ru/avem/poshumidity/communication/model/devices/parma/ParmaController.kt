@@ -2,9 +2,9 @@ package ru.avem.poshumidity.communication.model.devices.parma
 
 import ru.avem.kserialpooler.communication.adapters.modbusrtu.ModbusRTUAdapter
 import ru.avem.kserialpooler.communication.adapters.utils.ModbusRegister
+import ru.avem.kserialpooler.communication.utils.TransportException
 import ru.avem.poshumidity.communication.model.DeviceRegister
 import ru.avem.poshumidity.communication.model.IDeviceController
-import ru.avem.poshumidity.communication.utils.TransportException
 
 class ParmaController(
     override val name: String,

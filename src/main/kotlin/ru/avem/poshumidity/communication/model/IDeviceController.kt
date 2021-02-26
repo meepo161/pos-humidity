@@ -2,7 +2,7 @@ package ru.avem.poshumidity.communication.model
 
 import mu.KotlinLogging
 import ru.avem.kserialpooler.communication.adapters.modbusrtu.ModbusRTUAdapter
-import ru.avem.poshumidity.communication.utils.TransportException
+import ru.avem.kserialpooler.communication.utils.TransportException
 import ru.avem.poshumidity.utils.sleep
 
 interface IDeviceController {
