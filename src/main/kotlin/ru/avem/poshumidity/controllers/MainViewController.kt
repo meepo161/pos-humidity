@@ -7,11 +7,12 @@ import ru.avem.poshumidity.communication.model.devices.owen.pr.OwenPrModel
 import ru.avem.poshumidity.entities.TableValuesTest
 import ru.avem.poshumidity.utils.State
 import ru.avem.poshumidity.utils.Toast
+import ru.avem.poshumidity.utils.showTwoWayDialog
+import ru.avem.poshumidity.utils.sleep
 import ru.avem.poshumidity.view.MainView
 import tornadofx.Controller
 import tornadofx.asObservable
 import tornadofx.runLater
-import java.lang.Thread.sleep
 import kotlin.concurrent.thread
 import kotlin.experimental.and
 import kotlin.time.ExperimentalTime
@@ -39,19 +40,19 @@ class MainViewController : Controller() {
 
     var tableValuesTest = listOf(
         TableValuesTest(
-            SimpleStringProperty("Начало"),
+            SimpleStringProperty("Начало (ДТВ1)"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("Неизвестно")
         ),
         TableValuesTest(
-            SimpleStringProperty("Середина"),
+            SimpleStringProperty("Середина (ДТВ2)"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("Неизвестно")
         ),
         TableValuesTest(
-            SimpleStringProperty("Конец"),
+            SimpleStringProperty("Конец (ДТВ3)"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("0.0"),
             SimpleStringProperty("Неизвестно")
@@ -71,39 +72,26 @@ class MainViewController : Controller() {
 
                 if (CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
                     runLater {
+                        cause = ""
                         view.comIndicate.fill = State.OK.c
+                        view.labelTestStatusEnds.text = ""
                     }
-                    if (doorZone) {
-                        runLater {
-                            view.labelTestStatusEnds.text = "Дверь открыта"
-                        }
-                    } else {
-                        runLater {
-                            view.labelTestStatusEnds.text = ""
-                        }
-                    }
-                    if (!isExperimentRunning && CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding && !doorZone) {
+                    if (!isExperimentRunning) {
                         runLater {
                             view.buttonStart.isDisable = false
                         }
-                    } else if (!isExperimentRunning && (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding || doorZone)) {
-                        runLater {
-                            view.buttonStart.isDisable = true
-                        }
-
                     }
                 } else {
                     runLater {
-                        cause = "Нет связи"
                         view.comIndicate.fill = State.BAD.c
                         view.labelTestStatusEnds.text = "Нет связи со стендом. Проверьте подключение."
                         view.buttonStart.isDisable = true
                         view.buttonStop.isDisable = true
                     }
                 }
+                sleep(1000)
             }
         }
-        sleep(1000)
     }
 
     @OptIn(ExperimentalTime::class)
@@ -112,7 +100,17 @@ class MainViewController : Controller() {
     }
 
     fun handleStopTest() {
-        cause = "Отменено оператором"
+        view.currentWindow?.let {
+            showTwoWayDialog(
+                "Отмена",
+                "Вы действительно хотите отменить испытание?",
+                "Нет",
+                "Да",
+                { },
+                { cause = "Отменено оператором" },
+                currentWindow = it
+            )
+        }
     }
 
     fun clearTable() {
@@ -131,7 +129,7 @@ class MainViewController : Controller() {
     }
 
     fun showAboutUs() {
-        Toast.makeText("Версия ПО: 1.0.0\nВерсия БСУ: 1.0.0\nДата: 02.01.2021").show(Toast.ToastType.INFORMATION)
+        Toast.makeText("Версия ПО: 2.0.8\nВерсия БСУ: 1.0.0\nДата: 01.06.2021").show(Toast.ToastType.INFORMATION)
     }
 
     fun setNewHumidityAndTime() {

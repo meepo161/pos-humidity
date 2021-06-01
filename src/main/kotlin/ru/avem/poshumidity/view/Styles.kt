@@ -27,9 +27,20 @@ class Styles : Stylesheet() {
         val vboxTextArea by cssclass()
         val alert by cssclass()
         val mainTable by cssclass()
+        val authorization by cssclass()
     }
 
     init {
+
+        comboBox {
+            fontSize = 36.px
+        }
+
+        passwordField {
+            fontSize = 36.px
+            fontWeight = FontWeight.EXTRA_BOLD
+        }
+
         alert {
             baseColor = c("#222")
             fontSize = 18.px
@@ -53,6 +64,11 @@ class Styles : Stylesheet() {
             font = loadFont("/font/DSEG7Modern-BoldItalic.ttf", 24.0)!!
             backgroundColor += c("#2e0d08")
             textFill = c("#ff3000")
+            fontWeight = FontWeight.EXTRA_BOLD
+        }
+
+        authorization {
+            fontSize = 60.px
             fontWeight = FontWeight.EXTRA_BOLD
         }
 

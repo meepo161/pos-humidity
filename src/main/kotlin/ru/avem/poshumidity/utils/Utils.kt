@@ -1,14 +1,20 @@
 package ru.avem.poshumidity.utils
 
 import javafx.event.EventHandler
+import javafx.scene.control.ButtonType
 import javafx.scene.control.TextField
+import javafx.stage.Window
 import tornadofx.ViewTransition
+import tornadofx.runLater
 import tornadofx.seconds
+import tornadofx.warning
 import java.awt.Desktop
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.file.Paths
 import java.util.*
+import javax.sound.sampled.AudioSystem
+import kotlin.concurrent.thread
 import kotlin.math.abs
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
@@ -189,3 +195,63 @@ fun toHHmmss(time: Long): String {
 }
 
 private fun padZero(d: Int) = d.toString().padStart(2, '0')
+
+fun showTwoWayDialog(
+    title: String,
+    text: String,
+    way1Title: String,
+    way2Title: String,
+    way1: () -> Unit,
+    way2: () -> Unit,
+    currentWindow: Window
+) {
+    val initTime = System.currentTimeMillis()
+
+    var isDialogOpened = true
+
+    runLater {
+        warning(
+            title,
+            text,
+            ButtonType(way1Title),
+            ButtonType(way2Title),
+            owner = currentWindow
+        ) { buttonType ->
+            when (buttonType.text) {
+                way1Title -> way1()
+                way2Title -> way2()
+            }
+            isDialogOpened = false
+        }
+    }
+
+//    while (isDialogOpened && !breakCondition()) {
+//        println("running ${System.currentTimeMillis()}")
+//        Thread.sleep(10)
+//        val elapsedTime = System.currentTimeMillis() - initTime
+//
+//        if (elapsedTime > timeout) {
+////            if (isDialogOpened) { TODO
+////                runLater { alert.close() }
+////            }
+//            throw Exception("Время ожидания диалога превышено")
+//        }
+//    }
+}
+
+fun soundError() {
+    thread(isDaemon = true) {
+        try {
+            val soundFile = File("snd.wav")
+            val ais = AudioSystem.getAudioInputStream(soundFile)
+            val clip = AudioSystem.getClip()
+            clip.open(ais)
+            clip.framePosition = 0
+            clip.start()
+            Thread.sleep(1000)
+            clip.stop()
+            clip.close()
+        } catch (ignored: Exception) {
+        }
+    }
+}

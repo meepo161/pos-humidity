@@ -38,6 +38,9 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
                                 "#PROTOCOL_NUMBER#" -> cell.setCellValue(protocol.id.toString())
                                 "#DATE#" -> cell.setCellValue(protocol.date)
                                 "#TIME#" -> cell.setCellValue(protocol.time)
+                                "#CIPHER#" -> cell.setCellValue(protocol.cipher1)
+                                "#NUMBER_PRODUCT#" -> cell.setCellValue(protocol.productNumber1)
+                                "#OPERATOR#" -> cell.setCellValue(protocol.operator)
 
                                 else -> {
                                     if (cell.stringCellValue.contains("#")) {
@@ -51,6 +54,7 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
             }
             fillParameters3(wb, protocol.values1, protocol.values2, protocol.values3, 0, 15)
             drawLineChart3(wb)
+            sheet.protectSheet("avem")
             val outStream = ByteArrayOutputStream()
             wb.write(outStream)
             outStream.close()
@@ -90,6 +94,7 @@ fun saveProtocolAsWorkbook(protocolSingle: ProtocolSingle, path: String = "proto
             }
             fillParameters(wb, protocolSingle.values, start, end)
             drawLineChart(wb)
+            sheet.protectSheet("avem")
             val outStream = ByteArrayOutputStream()
             wb.write(outStream)
             outStream.close()
@@ -132,8 +137,8 @@ fun fillParameters3(wb: XSSFWorkbook, dots1: String, dots2: String, dots3: Strin
     val valuesForExcel2 = arrayListOf<Double>()
     val valuesForExcel3 = arrayListOf<Double>()
     var step = 1
-    if (values1.size > 1000) {
-        step = (values1.size - values1.size % 1000) / 1000
+    if (values1.size > 200) {
+        step = (values1.size - values1.size % 200) / 200
     }
     for (i in values1.indices step step) {
         valuesForExcel1.add(values1[i])
@@ -145,14 +150,14 @@ fun fillParameters3(wb: XSSFWorkbook, dots1: String, dots2: String, dots3: Strin
     val cellStyle: XSSFCellStyle = generateStyles(wb) as XSSFCellStyle
     var rowNum = rawNumber
     row = sheet.createRow(rowNum)
+    var dot = 0
     for (i in valuesForExcel1.indices) {
-        fillOneCell(row, columnNumber, cellStyle, i)
+        fillOneCell(row, columnNumber, cellStyle, dot)
         fillOneCell(row, columnNumber + 1, cellStyle, valuesForExcel1[i])
-        fillOneCell(row, columnNumber + 2, cellStyle, i)
-        fillOneCell(row, columnNumber + 3, cellStyle, valuesForExcel2[i])
-        fillOneCell(row, columnNumber + 4, cellStyle, i)
-        fillOneCell(row, columnNumber + 5, cellStyle, valuesForExcel3[i])
+        fillOneCell(row, columnNumber + 2, cellStyle, valuesForExcel2[i])
+        fillOneCell(row, columnNumber + 3, cellStyle, valuesForExcel3[i])
         row = sheet.createRow(++rowNum)
+        dot += step
     }
 
 }
@@ -164,7 +169,7 @@ private fun drawLineChart(workbook: XSSFWorkbook) {
     val valueData = DataSources.fromNumericCellRange(sheet, CellRangeAddress(16, lastRowIndex, 1, 1))
 
     var lineChart = createLineChart(sheet)
-    drawLineChart3(lineChart, timeData, valueData)
+    drawLineChart3(lineChart, timeData, valueData, "")
 }
 
 private fun createLineChart(sheet: XSSFSheet): XSSFChart {
@@ -206,19 +211,15 @@ private fun drawLineChart3(workbook: XSSFWorkbook) {
 
     val timeData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 0, 0))
     val valueData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 1, 1))
-
-    val timeData2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 2, 2))
-    val valueData2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 3, 3))
-
-    val timeData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 4, 4))
-    val valueData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 5, 5))
+    val valueData2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 2, 2))
+    val valueData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 3, 3))
 
     val lineChart1 = createLineChart(sheet, 16, 26)
-    drawLineChart3(lineChart1, timeData1, valueData1)
+    drawLineChart3(lineChart1, timeData1, valueData1, "Начало(ДТВ1), сек")
     val lineChart2 = createLineChart(sheet, 27, 37)
-    drawLineChart3(lineChart2, timeData2, valueData2)
+    drawLineChart3(lineChart2, timeData1, valueData2, "Середина(ДТВ2), сек")
     val lineChart3 = createLineChart(sheet, 38, 48)
-    drawLineChart3(lineChart3, timeData3, valueData3)
+    drawLineChart3(lineChart3, timeData1, valueData3, "Конец(ДТВ3), сек")
 }
 
 private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int): XSSFChart {
@@ -231,7 +232,8 @@ private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int): XSSFC
 private fun drawLineChart3(
     lineChart: XSSFChart,
     xAxisData: ChartDataSource<Number>,
-    yAxisData: ChartDataSource<Number>
+    yAxisData: ChartDataSource<Number>,
+    section: String
 ) {
     val data = lineChart.chartDataFactory.createLineChartData()
 
@@ -242,6 +244,8 @@ private fun drawLineChart3(
     val series = data.addSeries(xAxisData, yAxisData)
     series.setTitle("График")
     lineChart.plot(data, xAxis, yAxis)
+    lineChart.axes[0].setTitle(section)
+    lineChart.axes[1].setTitle("Влажность, %")
 
     val plotArea = lineChart.ctChart.plotArea
     plotArea.lineChartArray[0].smooth

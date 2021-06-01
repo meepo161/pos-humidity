@@ -39,12 +39,20 @@ class MainView : View("Комплексный стенд для испытани
     var buttonStart: Button by singleAssign()
     var buttonStop: Button by singleAssign()
 
+    var tfCipher1: TextField by singleAssign()
+    var tfProductNumber1: TextField by singleAssign()
+
     override val root = borderpane {
         maxWidth = 1920.0
         maxHeight = 1000.0
         top {
             mainMenubar = menubar {
                 menu("Меню") {
+                    item("Сменить пользователя") {
+                        action {
+                            replaceWith<AuthorizationView>()
+                        }
+                    }
                     item("Выход") {
                         action {
                             exitProcess(0)
@@ -55,6 +63,16 @@ class MainView : View("Комплексный стенд для испытани
                     item("Протоколы") {
                         action {
                             find<ProtocolListWindow>().openModal(
+                                modality = Modality.WINDOW_MODAL,
+                                escapeClosesWindow = true,
+                                resizable = false,
+                                owner = this@MainView.currentWindow
+                            )
+                        }
+                    }
+                    item("Пользователи") {
+                        action {
+                            find<UserEditorWindow>().openModal(
                                 modality = Modality.WINDOW_MODAL,
                                 escapeClosesWindow = true,
                                 resizable = false,
@@ -83,8 +101,20 @@ class MainView : View("Комплексный стенд для испытани
                     }
                     alignmentProperty().set(Pos.CENTER)
 
-                    label("Испытание в гидростатической камере").addClass(stopStart)
+                    label("Испытание в гидростатической камере").addClass(extraHard)
 
+                    hbox(spacing = 16.0) {
+                        alignmentProperty().set(Pos.CENTER)
+                        label("Шифр: ")
+                        tfCipher1 = textfield {
+                            callKeyBoard()
+                        }
+                        label("Номер изделия: ")
+                        tfProductNumber1 = textfield {
+                            callKeyBoard()
+
+                        }
+                    }.addClass(extraHard)
                     hbox(spacing = 16.0) {
                         alignmentProperty().set(Pos.CENTER)
                         label("Введите влажность: ").addClass(highHard)
@@ -113,9 +143,9 @@ class MainView : View("Комплексный стенд для испытани
                             items = controller.tableValuesTest
                             minHeight = 376.0
                             maxHeight = 376.0
-                            minWidth = 1200.0
-                            prefWidth = 1200.0
-                            maxWidth = 1200.0
+                            minWidth = 1300.0
+                            prefWidth = 1300.0
+                            maxWidth = 1300.0
                             columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
                             mouseTransparentProperty().set(true)
                             column("Место", TableValuesTest::descriptor.getter)

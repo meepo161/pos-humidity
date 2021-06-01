@@ -4,8 +4,6 @@ import ru.avem.kserialpooler.communication.adapters.modbusrtu.ModbusRTUAdapter
 import ru.avem.kserialpooler.communication.adapters.utils.ModbusRegister
 import ru.avem.poshumidity.communication.model.DeviceRegister
 import ru.avem.poshumidity.communication.model.IDeviceController
-import ru.avem.poshumidity.communication.utils.TypeByteOrder
-import ru.avem.poshumidity.communication.utils.allocateOrderedByteBuffer
 import ru.avem.poshumidity.utils.sleep
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -173,6 +171,10 @@ class OwenPrController(
         onBitInRegister(getRegisterById(OwenPrModel.KMS1_REGISTER), 3)
     }
 
+    fun onSound() {
+        onBitInRegister2(getRegisterById(OwenPrModel.KMS2_REGISTER), 8)
+    }
+
     fun off1() {
         offBitInRegister(getRegisterById(OwenPrModel.KMS1_REGISTER), 1)
     }
@@ -183,6 +185,10 @@ class OwenPrController(
 
     fun off3() {
         offBitInRegister(getRegisterById(OwenPrModel.KMS1_REGISTER), 3)
+    }
+
+    fun offSound() {
+        offBitInRegister2(getRegisterById(OwenPrModel.KMS2_REGISTER), 8)
     }
 
     fun offAllKMs() {

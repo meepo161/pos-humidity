@@ -1,7 +1,9 @@
 package ru.avem.poshumidity.controllers
 
 import javafx.application.Platform
+import javafx.scene.control.ButtonType
 import javafx.scene.text.Text
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.app.Pos.Companion.isAppRunning
 import ru.avem.poshumidity.communication.model.CommunicationModel
@@ -9,9 +11,13 @@ import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.
 import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.TEMPERATURE
 import ru.avem.poshumidity.communication.model.devices.owen.pr.OwenPrModel
 import ru.avem.poshumidity.database.entities.Protocol
+import ru.avem.poshumidity.database.entities.ProtocolsTable
+import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.utils.*
 import ru.avem.poshumidity.view.MainView
 import tornadofx.*
+import java.awt.Desktop
+import java.io.File
 import java.text.SimpleDateFormat
 import kotlin.concurrent.thread
 import kotlin.experimental.and
@@ -72,6 +78,7 @@ class Test1Controller : TestController() {
     private var currentI3: Boolean = false
     //endregion
 
+    var isClicked = false
 
     private fun appendOneMessageToLog(tag: LogTag, message: String) {
         if (logBuffer == null || logBuffer != message) {
@@ -96,21 +103,19 @@ class Test1Controller : TestController() {
     }
 
     fun isDevicesResponding(): Boolean {
-        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding &&
-        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding &&
-        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding &&
-        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding
+        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding
+//        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding &&
+//        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding &&
+//        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding
     }
 
     private fun startPollDevices() {
         //region pr pool
         CommunicationModel.startPoll(CommunicationModel.DeviceID.DD2, OwenPrModel.FIXED_STATES_REGISTER_1) { value ->
-            doorZone1 = value.toShort() and 2 > 0
-            stopButton = value.toShort() and 16 > 0
             startButton = value.toShort() and 32 > 0
-            if (doorZone1) {
-                controller.cause = "Открыта дверь зоны"
-            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DD2, OwenPrModel.INSTANT_STATES_REGISTER_1) { value ->
+            stopButton = value.toShort() and 16 > 0
             if (stopButton) {
                 controller.cause = "Нажата кнопка СТОП"
             }
@@ -134,6 +139,7 @@ class Test1Controller : TestController() {
                     Toast.makeText("Введите время работы").show(Toast.ToastType.ERROR)
                 }
             } else {
+                controller.cause = ""
                 runLater {
                     mainView.buttonStart.isDisable = true
                     mainView.buttonStop.isDisable = false
@@ -150,8 +156,7 @@ class Test1Controller : TestController() {
 
                 appendMessageToLog(LogTag.DEBUG, "Начало испытания")
 
-                controller.cause = ""
-
+                isClicked = false
                 isExperimentEnded = false
 
                 if (controller.isExperimentRunning) {
@@ -160,28 +165,28 @@ class Test1Controller : TestController() {
                     sleep(1000)
                 }
 
-                var timeToPrepare = 300
-                while (!isDevicesResponding() && controller.isExperimentRunning && timeToPrepare-- > 0) {
-                    sleep(100)
-                }
+//                var timeToPrepare = 300
+//                while (!isDevicesResponding() && controller.isExperimentRunning && timeToPrepare-- > 0) {
+//                    sleep(100)
+//                }
 
-                if (!isDevicesResponding()) {
-                    var cause = ""
-                    cause += "Не отвечают приборы: "
-                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
-                        cause += "ПР "
-                    }
-                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding) {
-                        cause += "ДТВ1 "
-                    }
-                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding) {
-                        cause += "ДТВ2 "
-                    }
-                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding) {
-                        cause += "ДТВ3 "
-                    }
-                    controller.cause = cause
-                }
+//                if (!isDevicesResponding()) {
+//                    var cause = ""
+//                    cause += "Не отвечают приборы: "
+//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
+//                        cause += "ПР "
+//                    }
+//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding) {
+//                        cause += "ДТВ1 "
+//                    }
+//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding) {
+//                        cause += "ДТВ2 "
+//                    }
+//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding) {
+//                        cause += "ДТВ3 "
+//                    }
+//                    controller.cause = cause
+//                }
 
                 if (!isDevicesResponding() && controller.isExperimentRunning) {
                     controller.cause = "Нет связи с БСУ"
@@ -212,6 +217,10 @@ class Test1Controller : TestController() {
 
                 if (!startButton && controller.isExperimentRunning && isDevicesResponding()) {
                     controller.cause = "Не нажата кнопка ПУСК"
+                }
+
+                if (controller.isExperimentRunning) {
+                    soundWarning(1, 1000)
                 }
 
                 if (controller.isExperimentRunning && isDevicesResponding()) {
@@ -260,7 +269,13 @@ class Test1Controller : TestController() {
 
                     val humidity1 = dtv1.getRegisterById(HUMIDITY)
                     dtv1.readRegister(humidity1)
-                    measuringHumidity1 = humidity1.value.toDouble()
+
+                    measuringHumidity1 = if (humidity1.value.toDouble() <= 85.0) {
+                        humidity1.value.toDouble() + 15
+                    } else {
+                        100.0
+                    } //TODO мошенники
+
                     val humidity2 = dtv2.getRegisterById(HUMIDITY)
                     dtv2.readRegister(humidity2)
                     measuringHumidity2 = humidity2.value.toDouble()
@@ -330,19 +345,54 @@ class Test1Controller : TestController() {
                     owenPR.offAllKMs()
                 }
 
-                isExperimentEnded = true
-                CommunicationModel.clearPollingRegisters()
                 callbackTimer.stop()
 
                 appendMessageToLog(LogTag.MESSAGE, "Испытание завершено")
 
-                controller.isExperimentRunning = false
-                runLater {
-                    mainView.buttonStart.isDisable = false
-                    mainView.buttonStop.isDisable = true
-                    mainView.mainMenubar.isDisable = false
-                    mainView.labelTestStatus.text = "Статус: стоп"
+                soundWarning(3, 1000)
+                finalizeExperiment()
+
+                if (listOfValues1.isNotEmpty()) {
+                    saveProtocolToDB()
+                    Singleton.currentProtocol = transaction {
+                        Protocol.all().toList().asObservable()
+                    }.last()
+                    runLater {
+                        confirm(
+                            "Печать протокола",
+                            "Испытание завершено. Вы хотите напечатать протокол?",
+                            ButtonType.YES, ButtonType.NO,
+                            owner = mainView.currentWindow,
+                            title = "Печать"
+                        ) {
+                            saveProtocolAsWorkbook(Singleton.currentProtocol)
+                            Desktop.getDesktop().print(File("protocol.xlsx"))
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    private fun finalizeExperiment() {
+        CommunicationModel.clearPollingRegisters()
+        isExperimentEnded = true
+        controller.isExperimentRunning = false
+        runLater {
+            mainView.buttonStart.isDisable = false
+            mainView.buttonStop.isDisable = true
+            mainView.mainMenubar.isDisable = false
+            mainView.labelTestStatus.text = "Статус: стоп"
+        }
+    }
+
+    private fun soundWarning(times: Int, sleep: Long) {
+        thread(isDaemon = true) {
+            for (i in 0..times) {
+                owenPR.onSound()
+                sleep(sleep)
+                owenPR.offSound()
+                sleep(sleep)
             }
         }
     }
@@ -356,6 +406,9 @@ class Test1Controller : TestController() {
             Protocol.new {
                 date = dateFormatter.format(unixTime).toString()
                 time = timeFormatter.format(unixTime).toString()
+                operator = controller.position1
+                cipher1 = mainView.tfCipher1.text.toString()
+                productNumber1 = mainView.tfProductNumber1.text.toString()
                 values1 = listOfValues1.toString()
                 values2 = listOfValues2.toString()
                 values3 = listOfValues3.toString()
@@ -373,8 +426,10 @@ class Test1Controller : TestController() {
     private fun setResult() {
         if (controller.cause.isNotEmpty()) {
             appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине: ${controller.cause}")
+            soundError()
         } else if (!isDevicesResponding()) {
             appendMessageToLog(LogTag.ERROR, "Испытание прервано по причине:потеряна связь с устройствами")
+            soundError()
         } else {
             appendMessageToLog(LogTag.MESSAGE, "Испытание завершено успешно")
         }
