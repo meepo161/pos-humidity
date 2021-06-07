@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.database.entities.*
 import ru.avem.poshumidity.database.entities.Users.fullName
+import ru.avem.poshumidity.utils.formatRealNumber
 import java.sql.Connection
 
 fun validateDB() {
@@ -66,14 +67,25 @@ fun validateDB() {
                     val list1 = mutableListOf<String>()
                     val list2 = mutableListOf<String>()
                     val list3 = mutableListOf<String>()
-                    for (i in 0..10000) {
-                        list1.add("1")
-                        list2.add((i).toString())
-                        list3.add((i * i).toString())
+                    for (i in 0..20000) {
+                        list1.add("97")
+                        list2.add(formatRealNumber(98 + Math.random()).toString())
+                        list3.add(formatRealNumber(96 + Math.random() * 2).toString())
+                    }
+                    val listTemp1 = mutableListOf<String>()
+                    val listTemp2 = mutableListOf<String>()
+                    val listTemp3 = mutableListOf<String>()
+                    for (i in 0..20000) {
+                        listTemp1.add(formatRealNumber(23 + Math.random()).toString())
+                        listTemp2.add(formatRealNumber(35 + Math.random()).toString())
+                        listTemp3.add(formatRealNumber(27 + Math.random() * 2).toString())
                     }
                     values1 = list1.toString()
                     values2 = list2.toString()
                     values3 = list3.toString()
+                    valuesTemp1 = listTemp1.toString()
+                    valuesTemp2 = listTemp2.toString()
+                    valuesTemp3 = listTemp3.toString()
                 }
 
                 ProtocolSingle.new {

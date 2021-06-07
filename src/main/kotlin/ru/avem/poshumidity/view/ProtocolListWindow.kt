@@ -9,16 +9,15 @@ import javafx.stage.FileChooser
 import javafx.stage.Modality
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
-import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.database.entities.Protocol
-import ru.avem.poshumidity.database.entities.ProtocolSingle
-import ru.avem.poshumidity.database.entities.ProtocolsSingleTable
 import ru.avem.poshumidity.database.entities.ProtocolsTable
+import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.utils.Singleton
+import ru.avem.poshumidity.utils.Toast
 import ru.avem.poshumidity.utils.callKeyBoard
-import ru.avem.poshumidity.utils.openFile
 import tornadofx.*
 import tornadofx.controlsfx.confirmNotification
+import java.awt.Desktop
 import java.io.File
 
 class ProtocolListWindow : View("Протоколы графиков") {
@@ -76,7 +75,7 @@ class ProtocolListWindow : View("Протоколы графиков") {
             hbox(spacing = 16.0) {
                 alignmentProperty().set(Pos.CENTER)
 
-                button("Открыть") {
+                button("Печать") {
                     action {
                         if (tableViewProtocols.selectedItem != null) {
                             Singleton.currentProtocol = transaction {
@@ -85,8 +84,10 @@ class ProtocolListWindow : View("Протоколы графиков") {
                                 }.toList().asObservable()
                             }.first()
                             saveProtocolAsWorkbook(Singleton.currentProtocol)
-                            close()
-                            openFile(File("protocol.xlsx"))
+                            Desktop.getDesktop().print(File("protocol.xlsx"))
+                            runLater {
+                                Toast.makeText("Началась печать протокола").show(Toast.ToastType.INFORMATION)
+                            }
                         }
                     }
                 }

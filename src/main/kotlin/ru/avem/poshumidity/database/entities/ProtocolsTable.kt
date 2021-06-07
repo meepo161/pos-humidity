@@ -14,6 +14,9 @@ object ProtocolsTable : IntIdTable() {
     val values1 =  varchar("values1", 99999999)
     val values2 =  varchar("values2", 99999999)
     val values3 =  varchar("values3", 99999999)
+    val valuesTemp1 =  varchar("valuesTemp1", 99999999)
+    val valuesTemp2 =  varchar("valuesTemp2", 99999999)
+    val valuesTemp3 =  varchar("valuesTemp3", 99999999)
 }
 
 class Protocol(id: EntityID<Int>) : IntEntity(id) {
@@ -27,6 +30,9 @@ class Protocol(id: EntityID<Int>) : IntEntity(id) {
     var values1 by ProtocolsTable.values1
     var values2 by ProtocolsTable.values2
     var values3 by ProtocolsTable.values3
+    var valuesTemp1 by ProtocolsTable.valuesTemp1
+    var valuesTemp2 by ProtocolsTable.valuesTemp2
+    var valuesTemp3 by ProtocolsTable.valuesTemp3
 
     override fun toString(): String {
         return "$id"

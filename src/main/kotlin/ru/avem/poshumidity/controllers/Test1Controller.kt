@@ -3,7 +3,6 @@ package ru.avem.poshumidity.controllers
 import javafx.application.Platform
 import javafx.scene.control.ButtonType
 import javafx.scene.text.Text
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.app.Pos.Companion.isAppRunning
 import ru.avem.poshumidity.communication.model.CommunicationModel
@@ -11,7 +10,6 @@ import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.
 import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.TEMPERATURE
 import ru.avem.poshumidity.communication.model.devices.owen.pr.OwenPrModel
 import ru.avem.poshumidity.database.entities.Protocol
-import ru.avem.poshumidity.database.entities.ProtocolsTable
 import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.utils.*
 import ru.avem.poshumidity.view.MainView
@@ -55,6 +53,10 @@ class Test1Controller : TestController() {
     private var listOfValues1 = mutableListOf<String>()
     private var listOfValues2 = mutableListOf<String>()
     private var listOfValues3 = mutableListOf<String>()
+
+    private var listOfValuesTemp1 = mutableListOf<String>()
+    private var listOfValuesTemp2 = mutableListOf<String>()
+    private var listOfValuesTemp3 = mutableListOf<String>()
 
     //endregion
 
@@ -153,6 +155,9 @@ class Test1Controller : TestController() {
                 listOfValues1.clear()
                 listOfValues2.clear()
                 listOfValues3.clear()
+                listOfValuesTemp1.clear()
+                listOfValuesTemp2.clear()
+                listOfValuesTemp3.clear()
 
                 appendMessageToLog(LogTag.DEBUG, "Начало испытания")
 
@@ -226,6 +231,19 @@ class Test1Controller : TestController() {
                 if (controller.isExperimentRunning && isDevicesResponding()) {
                     appendMessageToLog(LogTag.DEBUG, "Подготовка стенда")
                 }
+
+                if (controller.isExperimentRunning) {
+                    runLater {
+                        mainView.labelTimeRemaining.text = "Ожидайте поднятия влажности до 97%"
+                    }
+                }
+
+                while ((measuringHumidity1 < 97 || measuringHumidity2 < 97 || measuringHumidity3 < 97)
+                    && controller.isExperimentRunning
+                ) {
+                    generalLogic()
+                }
+
                 var timeLeft = 0
                 var lastAllTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
                 controller.allTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
@@ -267,68 +285,14 @@ class Test1Controller : TestController() {
                             })
                     }
 
-                    val humidity1 = dtv1.getRegisterById(HUMIDITY)
-                    dtv1.readRegister(humidity1)
-
-                    measuringHumidity1 = if (humidity1.value.toDouble() <= 85.0) {
-                        humidity1.value.toDouble() + 15
-                    } else {
-                        100.0
-                    } //TODO мошенники
-
-                    val humidity2 = dtv2.getRegisterById(HUMIDITY)
-                    dtv2.readRegister(humidity2)
-                    measuringHumidity2 = humidity2.value.toDouble()
-                    val humidity3 = dtv3.getRegisterById(HUMIDITY)
-                    dtv3.readRegister(humidity3)
-                    measuringHumidity3 = humidity3.value.toDouble()
-
-                    val temp1 = dtv1.getRegisterById(TEMPERATURE)
-                    dtv1.readRegister(temp1)
-                    measuringTemp1 = temp1.value.toDouble()
-                    val temp2 = dtv2.getRegisterById(TEMPERATURE)
-                    dtv2.readRegister(temp2)
-                    measuringTemp2 = temp2.value.toDouble()
-                    val temp3 = dtv3.getRegisterById(TEMPERATURE)
-                    dtv3.readRegister(temp3)
-                    measuringTemp3 = temp3.value.toDouble()
-
-                    sleep(1000)
-
-                    if (controller.humidityNeed > measuringHumidity1) {
-                        owenPR.on1()
-                        controller.tableValuesTest[0].generator.value = "Включен"
-                    } else if (controller.humidityNeed + 1 < measuringHumidity1) {
-                        owenPR.off1()
-                        controller.tableValuesTest[0].generator.value = "Отключен"
-                    }
-                    if (controller.humidityNeed > measuringHumidity2) {
-                        owenPR.on2()
-                        controller.tableValuesTest[1].generator.value = "Включен"
-                    } else if (controller.humidityNeed + 1 < measuringHumidity2) {
-                        owenPR.off2()
-                        controller.tableValuesTest[1].generator.value = "Отключен"
-                    }
-                    if (controller.humidityNeed > measuringHumidity3) {
-                        owenPR.on3()
-                        controller.tableValuesTest[2].generator.value = "Включен"
-                    } else if (controller.humidityNeed + 1 < measuringHumidity3) {
-                        owenPR.off3()
-                        controller.tableValuesTest[2].generator.value = "Отключен"
-                    }
-
-                    runLater {
-                        controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
-                        controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
-                        controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
-                        controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
-                        controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
-                        controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
-                    }
+                    generalLogic()
 
                     listOfValues1.add(String.format("%.1f", measuringHumidity1))
                     listOfValues2.add(String.format("%.1f", measuringHumidity2))
                     listOfValues3.add(String.format("%.1f", measuringHumidity3))
+                    listOfValuesTemp1.add(String.format("%.1f", measuringTemp1))
+                    listOfValuesTemp2.add(String.format("%.1f", measuringTemp2))
+                    listOfValuesTemp3.add(String.format("%.1f", measuringTemp3))
                 }
 
                 controller.tableValuesTest[0].generator.value = "Отключен"
@@ -349,7 +313,7 @@ class Test1Controller : TestController() {
 
                 appendMessageToLog(LogTag.MESSAGE, "Испытание завершено")
 
-                soundWarning(3, 1000)
+                soundWarning(2, 1000)
                 finalizeExperiment()
 
                 if (listOfValues1.isNotEmpty()) {
@@ -374,6 +338,66 @@ class Test1Controller : TestController() {
         }
     }
 
+    private fun generalLogic() {
+        val humidity1 = dtv1.getRegisterById(HUMIDITY)
+        dtv1.readRegister(humidity1)
+        measuringHumidity1 = if (humidity1.value.toDouble() <= 85.0) {
+            humidity1.value.toDouble() + 15
+        } else {
+            100.0
+        } //TODO мошенники
+
+        val humidity2 = dtv2.getRegisterById(HUMIDITY)
+        dtv2.readRegister(humidity2)
+        measuringHumidity2 = humidity2.value.toDouble()
+        val humidity3 = dtv3.getRegisterById(HUMIDITY)
+        dtv3.readRegister(humidity3)
+        measuringHumidity3 = humidity3.value.toDouble()
+
+        val temp1 = dtv1.getRegisterById(TEMPERATURE)
+        dtv1.readRegister(temp1)
+        measuringTemp1 = temp1.value.toDouble()
+        val temp2 = dtv2.getRegisterById(TEMPERATURE)
+        dtv2.readRegister(temp2)
+        measuringTemp2 = temp2.value.toDouble()
+        val temp3 = dtv3.getRegisterById(TEMPERATURE)
+        dtv3.readRegister(temp3)
+        measuringTemp3 = temp3.value.toDouble()
+
+        sleep(1000)
+
+        if (controller.humidityNeed > measuringHumidity1) {
+            owenPR.on1()
+            controller.tableValuesTest[0].generator.value = "Включен"
+        } else if (controller.humidityNeed + 1 < measuringHumidity1) {
+            owenPR.off1()
+            controller.tableValuesTest[0].generator.value = "Отключен"
+        }
+        if (controller.humidityNeed > measuringHumidity2) {
+            owenPR.on2()
+            controller.tableValuesTest[1].generator.value = "Включен"
+        } else if (controller.humidityNeed + 1 < measuringHumidity2) {
+            owenPR.off2()
+            controller.tableValuesTest[1].generator.value = "Отключен"
+        }
+        if (controller.humidityNeed > measuringHumidity3) {
+            owenPR.on3()
+            controller.tableValuesTest[2].generator.value = "Включен"
+        } else if (controller.humidityNeed + 1 < measuringHumidity3) {
+            owenPR.off3()
+            controller.tableValuesTest[2].generator.value = "Отключен"
+        }
+
+        runLater {
+            controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
+            controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
+            controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
+            controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
+            controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
+            controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
+        }
+    }
+
     private fun finalizeExperiment() {
         CommunicationModel.clearPollingRegisters()
         isExperimentEnded = true
@@ -388,7 +412,7 @@ class Test1Controller : TestController() {
 
     private fun soundWarning(times: Int, sleep: Long) {
         thread(isDaemon = true) {
-            for (i in 0..times) {
+            for (i in 0 until times) {
                 owenPR.onSound()
                 sleep(sleep)
                 owenPR.offSound()
@@ -412,6 +436,9 @@ class Test1Controller : TestController() {
                 values1 = listOfValues1.toString()
                 values2 = listOfValues2.toString()
                 values3 = listOfValues3.toString()
+                valuesTemp1 = listOfValuesTemp1.toString()
+                valuesTemp2 = listOfValuesTemp2.toString()
+                valuesTemp3 = listOfValuesTemp3.toString()
             }
         }
     }

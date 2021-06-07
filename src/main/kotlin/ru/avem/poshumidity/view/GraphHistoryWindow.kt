@@ -32,6 +32,7 @@ class GraphHistoryWindow : View("История графика") {
     private var selectedItemProperty = SimpleStringProperty()
     var sliderOt: Slider by singleAssign()
     var sliderDo: Slider by singleAssign()
+    var step = 10000
 
     private val sections = observableListOf("Начало", "Середина", "Конец")
 
@@ -146,8 +147,18 @@ class GraphHistoryWindow : View("История графика") {
                     .split(", ").map { it.replace(',', '.') }.map(String::toDouble)
         }
 
-        sliderOt.max = values.size.toDouble()
-        sliderDo.max = values.size.toDouble()
+        if (values.size > 10000) {
+            step = (values.size - values.size % 10000) / 10000
+        }
+
+        val valuesForTable = arrayListOf<Double>()
+        for (i in values.indices step step) {
+            valuesForTable.add(values[i])
+        }
+        values = valuesForTable
+
+        sliderOt.max = values.size.toDouble() * step
+        sliderDo.max = values.size.toDouble() * step
 
         var series = XYChart.Series<Number, Number>()
         series.data.clear()
@@ -161,10 +172,10 @@ class GraphHistoryWindow : View("История графика") {
             if (values[i].isNaN()) {
                 series = XYChart.Series()
                 needAddSeriesToChart = true
-                realTime += 1
+                realTime += step
             } else {
                 series.data.add(XYChart.Data(realTime, values[i]))
-                realTime += 1
+                realTime += step
 
                 if (needAddSeriesToChart) {
                     lineChart.data.add(series)
@@ -184,9 +195,12 @@ class GraphHistoryWindow : View("История графика") {
                 ot1 = if (tfOt.text.replace(',', '.').toDouble() < 0) {
                     0.0
                 } else {
-                    tfOt.text.replace(',', '.').toDouble()
+                    tfOt.text.replace(',', '.').toDouble() / step
                 }
-                do1 = tfDo.text.replace(',', '.').toDouble()
+                do1 = tfDo.text.replace(',', '.').toDouble() / step
+                if (do1 - ot1 < 1) {
+                    do1 = ot1 + 1
+                }
             } catch (e: Exception) {
                 Platform.runLater {
                     errorNotification(
@@ -199,7 +213,7 @@ class GraphHistoryWindow : View("История графика") {
             }
             series.data.clear()
             lineChart.data.clear()
-            var realTime = ot1
+            var realTime = ot1 * step
             if (do1 > values.size) {
                 do1 = values.size.toDouble()
                 tfDo.text = (values.size).toString()
@@ -209,11 +223,10 @@ class GraphHistoryWindow : View("История графика") {
                 if (values[i].isNaN()) {
                     series = XYChart.Series()
                     needAddSeriesToChart = true
-                    realTime += 1
+                    realTime += step
                 } else {
                     series.data.add(XYChart.Data(realTime, values[i]))
-                    realTime += 1
-
+                    realTime += step
                     if (needAddSeriesToChart) {
                         lineChart.data.add(series)
                         needAddSeriesToChart = false
@@ -243,9 +256,12 @@ class GraphHistoryWindow : View("История графика") {
                 ot1 = if (tfOt.text.replace(',', '.').toDouble() < 0) {
                     0.0
                 } else {
-                    tfOt.text.replace(',', '.').toDouble()
+                    tfOt.text.replace(',', '.').toDouble() / step
                 }
-                do1 = tfDo.text.replace(',', '.').toDouble()
+                do1 = tfDo.text.replace(',', '.').toDouble() / step
+                if (do1 - ot1 < 1) {
+                    do1 = ot1 + 1
+                }
                 if (do1 > values.size) {
                     do1 = values.size.toDouble()
                     tfDo.text = (values.size).toString()
