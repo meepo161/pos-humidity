@@ -38,9 +38,14 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
                                 "#PROTOCOL_NUMBER#" -> cell.setCellValue(protocol.id.toString())
                                 "#DATE#" -> cell.setCellValue(protocol.date)
                                 "#TIME#" -> cell.setCellValue(protocol.time)
-                                "#CIPHER#" -> cell.setCellValue(protocol.cipher1)
-                                "#NUMBER_PRODUCT#" -> cell.setCellValue(protocol.productNumber1)
+                                "#DATE_END#" -> cell.setCellValue(protocol.dateEnd)
+                                "#TIME_END#" -> cell.setCellValue(protocol.timeEnd)
+                                "#CIPHER1#" -> cell.setCellValue(protocol.cipher1)
+                                "#NUMBER_PRODUCT1#" -> cell.setCellValue(protocol.productNumber1)
                                 "#OPERATOR#" -> cell.setCellValue(protocol.operator)
+                                "#NUMBER_DATE_ATTESTATION#" -> cell.setCellValue(protocol.NUMBER_DATE_ATTESTATION)
+                                "#NAME_OF_OPERATION#" -> cell.setCellValue(protocol.NAME_OF_OPERATION)
+                                "#NUMBER_CONTROLLER#" -> cell.setCellValue(protocol.NUMBER_CONTROLLER)
 
                                 else -> {
                                     if (cell.stringCellValue.contains("#")) {
@@ -184,7 +189,7 @@ fun fillParameters3(
     row = sheet.createRow(rowNum)
     var second = 0
     for (i in valuesForExcel1.indices) {
-        fillOneCell(row, columnNumber, cellStyle, (second / 60.0).toInt())
+        fillOneCell(row, columnNumber, cellStyle, (second / 60.0 / 60).toInt())
         fillOneCell(row, columnNumber + 1, cellStyle, valuesForExcel1[i])
         fillOneCell(row, columnNumber + 2, cellStyle, valuesForExcel2[i])
         fillOneCell(row, columnNumber + 3, cellStyle, valuesForExcel3[i])
@@ -242,41 +247,43 @@ private fun generateStyles(wb: XSSFWorkbook): CellStyle {
 
 private fun drawLineChart3(workbook: XSSFWorkbook) {
     val sheet = workbook.getSheet("Sheet1")
+    val sheet2 = workbook.getSheet("Sheet2")
     val lastRowIndex = sheet.lastRowNum - 1
 
-    val timeData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 0, 0))
-    val valueData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 1, 1))
-    val valueData2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 2, 2))
-    val valueData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 3, 3))
-    val valueDataTemp1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 4, 4))
-    val valueDataTemp2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 5, 5))
-    val valueDataTemp3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, 6, 6))
+    var i = 0
+    val timeData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, i, i))
+    val valueData1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
+    val valueData2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
+    val valueData3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
+    val valueDataTemp1 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
+    val valueDataTemp2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
+    val valueDataTemp3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
 
-    var start = 16
-    val size = 25
-    val space = 4
-    val lineChart1 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChart1, timeData1, valueData1, "Начало(ДТВ1), минут", "Влажность, %")
-    start += size + space
-    val lineChart2 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChart2, timeData1, valueData2, "Середина(ДТВ2), минут", "Влажность, %")
-    start += size + space
-    val lineChart3 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChart3, timeData1, valueData3, "Конец(ДТВ3), минут", "Влажность, %")
-    start += size + space
-    val lineChartTemp1 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChartTemp1, timeData1, valueDataTemp1, "Начало(ДТВ1), минут", "Температура, °C")
-    start += size + space + 13
-    val lineChartTemp2 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChartTemp2, timeData1, valueDataTemp2, "Середина(ДТВ2), минут", "Температура, °C")
-    start += size + space
-    val lineChartTemp3 = createLineChart(sheet, start, start + size)
-    drawLineChart3(lineChartTemp3, timeData1, valueDataTemp3, "Конец(ДТВ3), минут", "Температура, °C")
+    var lastRowForGraph = 0
+    val graphHeight = 41
+    val graphSpace = graphHeight + 3
+    val lineChart1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChart1, timeData1, valueData1, "Время, час.      Начало(ДТВ1)", "Влажность, %")
+    lastRowForGraph += graphSpace
+    val lineChart2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChart2, timeData1, valueData2, "Время, час.      Середина(ДТВ2)", "Влажность, %")
+    lastRowForGraph += graphSpace
+    val lineChart3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChart3, timeData1, valueData3, "Время, час.      Конец(ДТВ3)", "Влажность, %")
+    lastRowForGraph += graphSpace
+    val lineChartTemp1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChartTemp1, timeData1, valueDataTemp1, "Время, час.      Начало(ДТВ1)", "Температура, °C")
+    lastRowForGraph += graphSpace
+    val lineChartTemp2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChartTemp2, timeData1, valueDataTemp2, "Время, час.      Середина(ДТВ2)", "Температура, °C")
+    lastRowForGraph += graphSpace
+    val lineChartTemp3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+    drawLineChart3(lineChartTemp3, timeData1, valueDataTemp3, "Время, час.      Конец(ДТВ3)", "Температура, °C")
 }
 
-private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int): XSSFChart {
+private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int, col1: Int = 1, col2: Int = 19): XSSFChart {
     val drawing = sheet.createDrawingPatriarch()
-    val anchor = drawing.createAnchor(0, 0, 0, 0, 7, rowStart, 36, rowEnd)
+    val anchor = drawing.createAnchor(0, 0, 0, 0, col1, rowStart, col2, rowEnd)
 
     return drawing.createChart(anchor)
 }

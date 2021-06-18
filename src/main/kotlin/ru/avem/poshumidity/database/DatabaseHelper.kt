@@ -14,11 +14,11 @@ fun validateDB() {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
 
     transaction {
-        SchemaUtils.create(Users, ProtocolsTable, ProtocolsSingleTable, ObjectsTypes)
+        SchemaUtils.create(Users, ProtocolsTable, ProtocolsSingleTable, ObjectsTypes, ProtocolVarsTable)
     }
 
     transaction {
-        if (User.all().count() < 2) {
+        if (User.all().count() < 1) {
             val admin = User.find {
                 fullName eq "admin"
             }
@@ -31,43 +31,24 @@ fun validateDB() {
             }
 
             if (TestObjectsType.all().count() < 1) {
-                TestObjectsType.new {
-                    serialNumber = "111111"
-                    resistanceCoil = "0.1"
-                    resistanceContactGroup = "0.2"
-                    voltageMin = "0.3"
-                    voltageMax = "0.4"
-                    timeOff = "0.5"
-                }
-
-                TestObjectsType.new {
-                    serialNumber = "222222"
-                    resistanceCoil = "1.1"
-                    resistanceContactGroup = "1.2"
-                    voltageMin = "1.3"
-                    voltageMax = "1.4"
-                    timeOff = "1.5"
-                }
-
-                TestObjectsType.new {
-                    serialNumber = "3333333"
-                    resistanceCoil = "2.1"
-                    resistanceContactGroup = "2.2"
-                    voltageMin = "2.3"
-                    voltageMax = "2.4"
-                    timeOff = "2.5"
+                ProtocolVars.new {
+                    NUMBER_DATE_ATTESTATION = "номер и дата аттестации"
+                    NAME_OF_OPERATION = "Наименование и шифр технологического процесса"
+                    NUMBER_CONTROLLER = "1"
                 }
 
                 Protocol.new {
                     date = "10.03.2020"
                     time = "11:30:00"
+                    dateEnd = "10.03.2021"
+                    timeEnd = "12:33:33"
                     cipher1 = "111111111"
                     productNumber1 = "777777"
                     operator = "Иванов И.И."
                     val list1 = mutableListOf<String>()
                     val list2 = mutableListOf<String>()
                     val list3 = mutableListOf<String>()
-                    for (i in 0..20000) {
+                    for (i in 0..172800) {
                         list1.add("97")
                         list2.add(formatRealNumber(98 + Math.random()).toString())
                         list3.add(formatRealNumber(96 + Math.random() * 2).toString())
@@ -75,7 +56,7 @@ fun validateDB() {
                     val listTemp1 = mutableListOf<String>()
                     val listTemp2 = mutableListOf<String>()
                     val listTemp3 = mutableListOf<String>()
-                    for (i in 0..20000) {
+                    for (i in 0..172800) {
                         listTemp1.add(formatRealNumber(23 + Math.random()).toString())
                         listTemp2.add(formatRealNumber(35 + Math.random()).toString())
                         listTemp3.add(formatRealNumber(27 + Math.random() * 2).toString())
@@ -86,6 +67,9 @@ fun validateDB() {
                     valuesTemp1 = listTemp1.toString()
                     valuesTemp2 = listTemp2.toString()
                     valuesTemp3 = listTemp3.toString()
+                    NUMBER_DATE_ATTESTATION = "номер и дата аттестации"
+                    NAME_OF_OPERATION = "Наименование и шифр технологического процесса"
+                    NUMBER_CONTROLLER = "1"
                 }
 
                 ProtocolSingle.new {

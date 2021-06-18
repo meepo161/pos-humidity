@@ -8,6 +8,8 @@ import org.jetbrains.exposed.dao.IntIdTable
 object ProtocolsTable : IntIdTable() {
     val date = varchar("date", 256)
     val time = varchar("time", 256)
+    val dateEnd = varchar("dateEnd", 256)
+    val timeEnd = varchar("timeEnd", 256)
     val cipher1 = varchar("cipher1", 256)
     val productNumber1 = varchar("productNumber1", 256)
     val operator = varchar("operator", 256)
@@ -17,6 +19,9 @@ object ProtocolsTable : IntIdTable() {
     val valuesTemp1 =  varchar("valuesTemp1", 99999999)
     val valuesTemp2 =  varchar("valuesTemp2", 99999999)
     val valuesTemp3 =  varchar("valuesTemp3", 99999999)
+    var NUMBER_DATE_ATTESTATION = varchar("NUMBER_DATE_ATTESTATION", 512)
+    var NAME_OF_OPERATION = varchar("NAME_OF_OPERATION", 512)
+    var NUMBER_CONTROLLER = varchar("NUMBER_CONTROLLER", 512)
 }
 
 class Protocol(id: EntityID<Int>) : IntEntity(id) {
@@ -24,6 +29,8 @@ class Protocol(id: EntityID<Int>) : IntEntity(id) {
 
     var date by ProtocolsTable.date
     var time by ProtocolsTable.time
+    var dateEnd by ProtocolsTable.dateEnd
+    var timeEnd by ProtocolsTable.timeEnd
     var cipher1 by ProtocolsTable.cipher1
     var operator by ProtocolsTable.operator
     var productNumber1 by ProtocolsTable.productNumber1
@@ -33,6 +40,9 @@ class Protocol(id: EntityID<Int>) : IntEntity(id) {
     var valuesTemp1 by ProtocolsTable.valuesTemp1
     var valuesTemp2 by ProtocolsTable.valuesTemp2
     var valuesTemp3 by ProtocolsTable.valuesTemp3
+    var NUMBER_DATE_ATTESTATION by ProtocolsTable.NUMBER_DATE_ATTESTATION
+    var NAME_OF_OPERATION by ProtocolsTable.NAME_OF_OPERATION
+    var NUMBER_CONTROLLER by ProtocolsTable.NUMBER_CONTROLLER
 
     override fun toString(): String {
         return "$id"

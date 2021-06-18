@@ -81,6 +81,7 @@ class Test1Controller : TestController() {
     //endregion
 
     var isClicked = false
+    var unixTimeStart = 0L
 
     private fun appendOneMessageToLog(tag: LogTag, message: String) {
         if (logBuffer == null || logBuffer != message) {
@@ -160,6 +161,7 @@ class Test1Controller : TestController() {
                 listOfValuesTemp3.clear()
 
                 appendMessageToLog(LogTag.DEBUG, "Начало испытания")
+                unixTimeStart = System.currentTimeMillis()
 
                 isClicked = false
                 isExperimentEnded = false
@@ -428,8 +430,10 @@ class Test1Controller : TestController() {
 
         transaction {
             Protocol.new {
-                date = dateFormatter.format(unixTime).toString()
-                time = timeFormatter.format(unixTime).toString()
+                date = dateFormatter.format(unixTimeStart).toString()
+                time = timeFormatter.format(unixTimeStart).toString()
+                dateEnd = dateFormatter.format(unixTime).toString()
+                timeEnd = timeFormatter.format(unixTime).toString()
                 operator = controller.position1
                 cipher1 = mainView.tfCipher1.text.toString()
                 productNumber1 = mainView.tfProductNumber1.text.toString()

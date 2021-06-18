@@ -60,6 +60,16 @@ class MainView : View("Комплексный стенд для испытани
                     }
                 }
                 menu("База данных") {
+                    item("Переменные для протокола") {
+                        action {
+                            find<ProtocolVarsWindow>().openModal(
+                                modality = Modality.WINDOW_MODAL,
+                                escapeClosesWindow = true,
+                                resizable = false,
+                                owner = this@MainView.currentWindow
+                            )
+                        }
+                    }
                     item("Протоколы") {
                         action {
                             find<ProtocolListWindow>().openModal(
