@@ -50,9 +50,9 @@ class Test1Controller : TestController() {
     @Volatile
     private var measuringTemp3: Double = 0.0
 
-    private var listOfValues1 = mutableListOf<String>()
-    private var listOfValues2 = mutableListOf<String>()
-    private var listOfValues3 = mutableListOf<String>()
+    var listOfValues1 = mutableListOf<String>()
+    var listOfValues2 = mutableListOf<String>()
+    var listOfValues3 = mutableListOf<String>()
 
     private var listOfValuesTemp1 = mutableListOf<String>()
     private var listOfValuesTemp2 = mutableListOf<String>()

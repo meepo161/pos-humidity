@@ -147,7 +147,7 @@ class MainView : View("Комплексный стенд для испытани
                             }
                         }.addClass(highHard)
                     }
-                    vbox(spacing = 16.0) {
+                    hbox(spacing = 16.0) {
                         alignmentProperty().set(Pos.CENTER)
                         tableview<TableValuesTest> {
                             items = controller.tableValuesTest
@@ -178,6 +178,17 @@ class MainView : View("Комплексный стенд для испытани
                                 }.addClass(megaHard)
                                 vvalueProperty().bind(vBoxLog.heightProperty())
                             }
+                        }
+                    }
+
+                    button("Отобразить графики") {
+                        action {
+                            find<GraphicRealTimeWindow>().openModal(
+                                modality = Modality.WINDOW_MODAL,
+                                escapeClosesWindow = true,
+                                resizable = false,
+                                owner = this@MainView.currentWindow
+                            )
                         }
                     }
 
