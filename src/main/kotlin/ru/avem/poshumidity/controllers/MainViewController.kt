@@ -27,7 +27,7 @@ class MainViewController : Controller() {
 
     var cause: String = ""
         set(value) {
-            if (value != "") {
+            if (value.isNotEmpty()) {
                 isExperimentRunning = false
             }
             field = value
@@ -129,7 +129,7 @@ class MainViewController : Controller() {
     }
 
     fun showAboutUs() {
-        Toast.makeText("Версия ПО: 2.0.8\nВерсия БСУ: 1.0.0\nДата: 01.06.2021").show(Toast.ToastType.INFORMATION)
+        Toast.makeText("Версия ПО: 2.1.3\nВерсия БСУ: 1.0.0\nДата: 30.11.2021").show(Toast.ToastType.INFORMATION)
     }
 
     fun setNewHumidityAndTime() {

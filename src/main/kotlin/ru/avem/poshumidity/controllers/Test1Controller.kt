@@ -6,12 +6,19 @@ import javafx.scene.text.Text
 import org.jetbrains.exposed.sql.transactions.transaction
 import ru.avem.poshumidity.app.Pos.Companion.isAppRunning
 import ru.avem.poshumidity.communication.model.CommunicationModel
-import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.HUMIDITY
-import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model.Companion.TEMPERATURE
+import ru.avem.poshumidity.communication.model.devices.dtv.Dtv02Model
 import ru.avem.poshumidity.communication.model.devices.owen.pr.OwenPrModel
+import ru.avem.poshumidity.database.entities.CoefValues
 import ru.avem.poshumidity.database.entities.Protocol
+import ru.avem.poshumidity.database.entities.ProtocolVars
 import ru.avem.poshumidity.protocol.saveProtocolAsWorkbook
 import ru.avem.poshumidity.utils.*
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest1
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest2
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest3
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTest1
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTest2
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTest3
 import ru.avem.poshumidity.view.MainView
 import tornadofx.*
 import java.awt.Desktop
@@ -50,14 +57,6 @@ class Test1Controller : TestController() {
     @Volatile
     private var measuringTemp3: Double = 0.0
 
-    var listOfValues1 = mutableListOf<String>()
-    var listOfValues2 = mutableListOf<String>()
-    var listOfValues3 = mutableListOf<String>()
-
-    private var listOfValuesTemp1 = mutableListOf<String>()
-    private var listOfValuesTemp2 = mutableListOf<String>()
-    private var listOfValuesTemp3 = mutableListOf<String>()
-
     //endregion
 
     //region переменные для защит ПР
@@ -80,8 +79,17 @@ class Test1Controller : TestController() {
     private var currentI3: Boolean = false
     //endregion
 
+
+    @Volatile
+    private var timeLeft = 0L
+
     var isClicked = false
     var unixTimeStart = 0L
+    private var isNeedTestValues: Boolean = false
+
+    var coefValues = transaction {
+        CoefValues.all().toList().asObservable()
+    }.first()
 
     private fun appendOneMessageToLog(tag: LogTag, message: String) {
         if (logBuffer == null || logBuffer != message) {
@@ -106,10 +114,11 @@ class Test1Controller : TestController() {
     }
 
     fun isDevicesResponding(): Boolean {
-        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding
+//        return CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding
 //        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding &&
 //        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding &&
 //        CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding
+        return true
     }
 
     private fun startPollDevices() {
@@ -123,8 +132,85 @@ class Test1Controller : TestController() {
                 controller.cause = "Нажата кнопка СТОП"
             }
         }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV1, Dtv02Model.HUMIDITY) { value ->
+            measuringHumidity1 = if (value.toDouble() <= 100 - coefValues.COEF1.toInt()) {
+                value.toDouble() + coefValues.COEF1.toInt()
+            } else {
+                100.0
+            }
+            runLater {
+                controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
+            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV2, Dtv02Model.HUMIDITY) { value ->
+            measuringHumidity2 = if (value.toDouble() <= 100 - coefValues.COEF2.toInt()) {
+                value.toDouble() + coefValues.COEF2.toInt()
+            } else {
+                100.0
+            }
+            runLater {
+                controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
+            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV3, Dtv02Model.HUMIDITY) { value ->
+            measuringHumidity3 = if (value.toDouble() <= 100 - coefValues.COEF3.toInt()) {
+                value.toDouble() + coefValues.COEF3.toInt()
+            } else {
+                100.0
+            }
+            runLater {
+                controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
+            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV1, Dtv02Model.TEMPERATURE) { value ->
+            measuringTemp1 = value.toDouble()
+            runLater {
+                controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
+            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV2, Dtv02Model.TEMPERATURE) { value ->
+            measuringTemp2 = value.toDouble()
+            runLater {
+                controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
+            }
+        }
+        CommunicationModel.startPoll(CommunicationModel.DeviceID.DTV3, Dtv02Model.TEMPERATURE) { value ->
+            measuringTemp3 = value.toDouble()
+            runLater {
+                controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
+            }
+        }
         //endregion
     }
+
+
+//    init {
+//        thread {
+//            while (isAppRunning) {
+//                if (isNeedTestValues) {
+//                    listOfValuesTest1.add(String.format("%.1f", measuringHumidity1))
+//                    listOfValuesTest2.add(String.format("%.1f", measuringHumidity2))
+//                    listOfValuesTest3.add(String.format("%.1f", measuringHumidity3))
+//                } else {
+//                    listOfValuesTest1.clear()
+//                    listOfValuesTest2.clear()
+//                    listOfValuesTest3.clear()
+//                }
+//                sleep(1000)
+//            }
+//        }
+//    }
+//    init {
+//        thread {
+//            while (isAppRunning) {
+//                listOfValuesTest1.add(String.format("%.1f", 98 + Random.nextDouble()))
+//                listOfValuesTest2.add(String.format("%.1f", 98 + Random.nextDouble()))
+//                listOfValuesTest3.add(String.format("%.1f", 98 + Random.nextDouble()))
+//                println(listOfValuesTest1)
+//                sleep(1000)
+//            }
+//        }
+//    }
 
     @ExperimentalTime
     fun startTest() {
@@ -148,17 +234,24 @@ class Test1Controller : TestController() {
                     mainView.buttonStop.isDisable = false
                     mainView.mainMenubar.isDisable = true
                     mainView.labelTestStatus.text = "Статус: работа"
+                    mainView.labelTimeRemaining.text = ""
                 }
+                timeLeft = 0
                 controller.humidityNeed = mainView.textFieldHumidity.text.replace(",", ".").toDouble()
+                isNeedTestValues = false
                 controller.isExperimentRunning = true
                 controller.clearTable()
 
-                listOfValues1.clear()
-                listOfValues2.clear()
-                listOfValues3.clear()
-                listOfValuesTemp1.clear()
-                listOfValuesTemp2.clear()
-                listOfValuesTemp3.clear()
+                listOfValuesTest1.clear()
+                listOfValuesTest2.clear()
+                listOfValuesTest3.clear()
+                listOfValuesTempTest1.clear()
+                listOfValuesTempTest2.clear()
+                listOfValuesTempTest3.clear()
+
+                coefValues = transaction {
+                    CoefValues.all().toList().asObservable()
+                }.first()
 
                 appendMessageToLog(LogTag.DEBUG, "Начало испытания")
                 unixTimeStart = System.currentTimeMillis()
@@ -171,29 +264,6 @@ class Test1Controller : TestController() {
                     appendMessageToLog(LogTag.DEBUG, "Инициализация устройств")
                     sleep(1000)
                 }
-
-//                var timeToPrepare = 300
-//                while (!isDevicesResponding() && controller.isExperimentRunning && timeToPrepare-- > 0) {
-//                    sleep(100)
-//                }
-
-//                if (!isDevicesResponding()) {
-//                    var cause = ""
-//                    cause += "Не отвечают приборы: "
-//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DD2).isResponding) {
-//                        cause += "ПР "
-//                    }
-//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV1).isResponding) {
-//                        cause += "ДТВ1 "
-//                    }
-//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV2).isResponding) {
-//                        cause += "ДТВ2 "
-//                    }
-//                    if (!CommunicationModel.getDeviceById(CommunicationModel.DeviceID.DTV3).isResponding) {
-//                        cause += "ДТВ3 "
-//                    }
-//                    controller.cause = cause
-//                }
 
                 if (!isDevicesResponding() && controller.isExperimentRunning) {
                     controller.cause = "Нет связи с БСУ"
@@ -236,17 +306,40 @@ class Test1Controller : TestController() {
 
                 if (controller.isExperimentRunning) {
                     runLater {
-                        mainView.labelTimeRemaining.text = "Ожидайте поднятия влажности до 97%"
+                        mainView.labelTimeRemaining.text =
+                            "Ожидайте поднятия влажности до ${mainView.textFieldHumidity.text}%"
                     }
                 }
 
-                while ((measuringHumidity1 < 97 || measuringHumidity2 < 97 || measuringHumidity3 < 97)
-                    && controller.isExperimentRunning
-                ) {
+                while ((measuringHumidity1 < 95 || measuringHumidity2 < 95 || measuringHumidity3 < 95) && controller.isExperimentRunning) {
                     generalLogic()
+                    sleep(1000)
                 }
 
-                var timeLeft = 0
+                if (controller.isExperimentRunning) {
+                    appendMessageToLog(LogTag.DEBUG, "Начался отсчет времени")
+                }
+
+                var lastTimeLeft = timeLeft
+
+                thread(isDaemon = true) {
+                    while (controller.isExperimentRunning) {
+                        if (timeLeft > lastTimeLeft) {
+                            listOfValuesTest1.add(String.format("%.1f", measuringHumidity1))
+                            listOfValuesTest2.add(String.format("%.1f", measuringHumidity2))
+                            listOfValuesTest3.add(String.format("%.1f", measuringHumidity3))
+
+                            listOfValuesTempTest1.add(String.format("%.1f", measuringTemp1))
+                            listOfValuesTempTest2.add(String.format("%.1f", measuringTemp2))
+                            listOfValuesTempTest3.add(String.format("%.1f", measuringTemp3))
+                            lastTimeLeft = timeLeft
+                        }
+                        sleep(50)
+                    }
+                }
+
+                isNeedTestValues = true
+                timeLeft = 0
                 var lastAllTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
                 controller.allTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
                 var callbackTimer = CallbackTimer(
@@ -266,12 +359,17 @@ class Test1Controller : TestController() {
                     })
 
                 while (controller.isExperimentRunning && callbackTimer.isRunning && isAppRunning && isDevicesResponding()) {
-                    if (controller.allTime != lastAllTime) {
+                    if (controller.allTime - timeLeft < 0) {
+                        runLater {
+                            mainView.labelTimeRemaining.text = "Осталось : 00:00:00"
+                        }
+                        break
+                    } else if (controller.allTime != lastAllTime) {
                         var ticksLeft = timeLeft
                         lastAllTime = (mainView.textFieldTime.text.replace(",", ".").toDouble() * 60 * 60).toInt()
                         callbackTimer.stop()
                         callbackTimer = CallbackTimer(
-                            tickPeriod = 1.seconds, tickTimes = controller.allTime - ticksLeft,
+                            tickPeriod = 1.seconds, tickTimes = (controller.allTime - ticksLeft).toInt(),
                             tickJob = {
                                 if (!controller.isExperimentRunning) {
                                     it.stop()
@@ -288,13 +386,11 @@ class Test1Controller : TestController() {
                     }
 
                     generalLogic()
+                    sleep(1000)
+                }
 
-                    listOfValues1.add(String.format("%.1f", measuringHumidity1))
-                    listOfValues2.add(String.format("%.1f", measuringHumidity2))
-                    listOfValues3.add(String.format("%.1f", measuringHumidity3))
-                    listOfValuesTemp1.add(String.format("%.1f", measuringTemp1))
-                    listOfValuesTemp2.add(String.format("%.1f", measuringTemp2))
-                    listOfValuesTemp3.add(String.format("%.1f", measuringTemp3))
+                if (callbackTimer.isRunning) {
+                    callbackTimer.stop()
                 }
 
                 controller.tableValuesTest[0].generator.value = "Отключен"
@@ -303,22 +399,12 @@ class Test1Controller : TestController() {
                 owenPR.offAllKMs()
                 setResult()
 
-                if (listOfValues1.isNotEmpty()) {
-                    saveProtocolToDB()
-                }
-
-                if (controller.isExperimentRunning) {
-                    owenPR.offAllKMs()
-                }
-
-                callbackTimer.stop()
-
                 appendMessageToLog(LogTag.MESSAGE, "Испытание завершено")
 
                 soundWarning(2, 1000)
                 finalizeExperiment()
 
-                if (listOfValues1.isNotEmpty()) {
+                if (listOfValuesTest1.isNotEmpty()) {
                     saveProtocolToDB()
                     Singleton.currentProtocol = transaction {
                         Protocol.all().toList().asObservable()
@@ -336,68 +422,40 @@ class Test1Controller : TestController() {
                         }
                     }
                 }
+                isNeedTestValues = false
             }
         }
     }
 
     private fun generalLogic() {
-        val humidity1 = dtv1.getRegisterById(HUMIDITY)
-        dtv1.readRegister(humidity1)
-        measuringHumidity1 = if (humidity1.value.toDouble() <= 85.0) {
-            humidity1.value.toDouble() + 15
-        } else {
-            100.0
-        } //TODO мошенники
-
-        val humidity2 = dtv2.getRegisterById(HUMIDITY)
-        dtv2.readRegister(humidity2)
-        measuringHumidity2 = humidity2.value.toDouble()
-        val humidity3 = dtv3.getRegisterById(HUMIDITY)
-        dtv3.readRegister(humidity3)
-        measuringHumidity3 = humidity3.value.toDouble()
-
-        val temp1 = dtv1.getRegisterById(TEMPERATURE)
-        dtv1.readRegister(temp1)
-        measuringTemp1 = temp1.value.toDouble()
-        val temp2 = dtv2.getRegisterById(TEMPERATURE)
-        dtv2.readRegister(temp2)
-        measuringTemp2 = temp2.value.toDouble()
-        val temp3 = dtv3.getRegisterById(TEMPERATURE)
-        dtv3.readRegister(temp3)
-        measuringTemp3 = temp3.value.toDouble()
-
-        sleep(1000)
-
-        if (controller.humidityNeed > measuringHumidity1) {
+        if (controller.humidityNeed + 1 > measuringHumidity1) {
             owenPR.on1()
             controller.tableValuesTest[0].generator.value = "Включен"
-        } else if (controller.humidityNeed + 1 < measuringHumidity1) {
+        } else if (controller.humidityNeed + 3 <= measuringHumidity1) {
             owenPR.off1()
             controller.tableValuesTest[0].generator.value = "Отключен"
         }
-        if (controller.humidityNeed > measuringHumidity2) {
+        if (controller.humidityNeed + 1 > measuringHumidity2) {
             owenPR.on2()
             controller.tableValuesTest[1].generator.value = "Включен"
-        } else if (controller.humidityNeed + 1 < measuringHumidity2) {
+        } else if (controller.humidityNeed + 3 <= measuringHumidity2) {
             owenPR.off2()
             controller.tableValuesTest[1].generator.value = "Отключен"
         }
-        if (controller.humidityNeed > measuringHumidity3) {
+        if (controller.humidityNeed + 1 > measuringHumidity3) {
             owenPR.on3()
             controller.tableValuesTest[2].generator.value = "Включен"
-        } else if (controller.humidityNeed + 1 < measuringHumidity3) {
+        } else if (controller.humidityNeed + 3 <= measuringHumidity3) {
             owenPR.off3()
             controller.tableValuesTest[2].generator.value = "Отключен"
         }
-
-        runLater {
-            controller.tableValuesTest[0].humidity.value = formatRealNumber(measuringHumidity1).toString()
-            controller.tableValuesTest[0].temperature.value = formatRealNumber(measuringTemp1).toString()
-            controller.tableValuesTest[1].humidity.value = formatRealNumber(measuringHumidity2).toString()
-            controller.tableValuesTest[1].temperature.value = formatRealNumber(measuringTemp2).toString()
-            controller.tableValuesTest[2].humidity.value = formatRealNumber(measuringHumidity3).toString()
-            controller.tableValuesTest[2].temperature.value = formatRealNumber(measuringTemp3).toString()
-        }
+//
+//        measuringHumidity1 = Random.nextDouble() + 96
+//        measuringHumidity2 = Random.nextDouble() + 97
+//        measuringHumidity3 = Random.nextDouble() + 98
+//        measuringTemp1 = Random.nextDouble() + 24
+//        measuringTemp2 = Random.nextDouble() + 25
+//        measuringTemp3 = Random.nextDouble() + 26
     }
 
     private fun finalizeExperiment() {
@@ -428,6 +486,10 @@ class Test1Controller : TestController() {
         val timeFormatter = SimpleDateFormat("HH:mm:ss")
         val unixTime = System.currentTimeMillis()
 
+        var protocolVars = transaction {
+            ProtocolVars.all().toList().asObservable()
+        }.first()
+
         transaction {
             Protocol.new {
                 date = dateFormatter.format(unixTimeStart).toString()
@@ -437,12 +499,15 @@ class Test1Controller : TestController() {
                 operator = controller.position1
                 cipher1 = mainView.tfCipher1.text.toString()
                 productNumber1 = mainView.tfProductNumber1.text.toString()
-                values1 = listOfValues1.toString()
-                values2 = listOfValues2.toString()
-                values3 = listOfValues3.toString()
-                valuesTemp1 = listOfValuesTemp1.toString()
-                valuesTemp2 = listOfValuesTemp2.toString()
-                valuesTemp3 = listOfValuesTemp3.toString()
+                values1 = listOfValuesTest1.toString()
+                values2 = listOfValuesTest2.toString()
+                values3 = listOfValuesTest3.toString()
+                valuesTemp1 = listOfValuesTempTest1.toString()
+                valuesTemp2 = listOfValuesTempTest2.toString()
+                valuesTemp3 = listOfValuesTempTest3.toString()
+                NUMBER_DATE_ATTESTATION = protocolVars.NUMBER_DATE_ATTESTATION
+                NAME_OF_OPERATION = protocolVars.NAME_OF_OPERATION
+                NUMBER_CONTROLLER = protocolVars.NUMBER_CONTROLLER
             }
         }
     }

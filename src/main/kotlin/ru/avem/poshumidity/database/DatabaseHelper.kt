@@ -14,7 +14,7 @@ fun validateDB() {
     TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
 
     transaction {
-        SchemaUtils.create(Users, ProtocolsTable, ProtocolsSingleTable, ObjectsTypes, ProtocolVarsTable)
+        SchemaUtils.create(Users, ProtocolsTable, ProtocolsSingleTable, ObjectsTypes, ProtocolVarsTable, CoefValuesTable)
     }
 
     transaction {
@@ -49,9 +49,9 @@ fun validateDB() {
                     val list2 = mutableListOf<String>()
                     val list3 = mutableListOf<String>()
                     for (i in 0..172800) {
-                        list1.add("97")
+                        list1.add(formatRealNumber(97 + Math.random()).toString())
                         list2.add(formatRealNumber(98 + Math.random()).toString())
-                        list3.add(formatRealNumber(96 + Math.random() * 2).toString())
+                        list3.add(formatRealNumber(96 + Math.random() * 15).toString())
                     }
                     val listTemp1 = mutableListOf<String>()
                     val listTemp2 = mutableListOf<String>()
@@ -76,6 +76,12 @@ fun validateDB() {
                     date = "10.03.2020"
                     time = "11:30:00"
                     values = "[0,1, 0,2, 0,4, 0,8, 1,6, 3,2, 6,4, 12,8, 25,6, 51,2, 102,4, 204,8]"
+                }
+
+                CoefValues.new {
+                    COEF1 = "3"
+                    COEF2 = "4"
+                    COEF3 = "5"
                 }
             }
         }

@@ -5,15 +5,12 @@ import javafx.scene.chart.LineChart
 import javafx.scene.chart.NumberAxis
 import javafx.scene.chart.XYChart
 import javafx.scene.control.CheckBox
-import ru.avem.poshumidity.utils.Singleton.listOfValuesTest1
-import ru.avem.poshumidity.utils.Singleton.listOfValuesTest2
-import ru.avem.poshumidity.utils.Singleton.listOfValuesTest3
-import ru.avem.poshumidity.utils.sleep
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest1
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest2
+import ru.avem.poshumidity.utils.Singleton.listOfValuesTempTest3
 import tornadofx.*
-import tornadofx.controlsfx.rangeslider
-import kotlin.concurrent.thread
 
-class GraphicRealTimeWindow : View("Графики в реальном времени") {
+class GraphicTempRealTimeWindow : View("Графики в реальном времени") {
 
     private var lineChart1: LineChart<Number, Number> by singleAssign()
     private var lineChart2: LineChart<Number, Number> by singleAssign()
@@ -29,6 +26,7 @@ class GraphicRealTimeWindow : View("Графики в реальном врем�
         checkbox2.isSelected = true
         checkbox3.isSelected = true
     }
+
 
     override val root = anchorpane {
         vbox(spacing = 16.0) {
@@ -54,14 +52,14 @@ class GraphicRealTimeWindow : View("Графики в реальном врем�
             }
 
             var numberAxis = NumberAxis()
-//            numberAxis.isForceZeroInRange = false
+            numberAxis.isForceZeroInRange = false
             lineChart1 = linechart("", numberAxis, NumberAxis()) {
                 prefWidth = 1800.0
                 prefHeight = 800.0
                 animated = false
                 createSymbols = false
                 isLegendVisible = false
-                yAxis.label = "Влажность, %"
+                yAxis.label = "Температура, °C"
                 xAxis.label = "Время, сек"
             }
             checkbox2 = checkbox("Середина") {
@@ -74,14 +72,14 @@ class GraphicRealTimeWindow : View("Графики в реальном врем�
                 }
             }
             numberAxis = NumberAxis()
-//            numberAxis.isForceZeroInRange = false
+            numberAxis.isForceZeroInRange = false
             lineChart2 = linechart("", numberAxis, NumberAxis()) {
                 prefWidth = 1800.0
                 prefHeight = 800.0
                 animated = false
                 createSymbols = false
                 isLegendVisible = false
-                yAxis.label = "Влажность, %"
+                yAxis.label = "Температура, °C"
                 xAxis.label = "Время, сек"
             }
             checkbox3 = checkbox("Конец") {
@@ -94,14 +92,14 @@ class GraphicRealTimeWindow : View("Графики в реальном врем�
                 }
             }
             numberAxis = NumberAxis()
-//            numberAxis.isForceZeroInRange = false
+            numberAxis.isForceZeroInRange = false
             lineChart3 = linechart("", numberAxis, NumberAxis()) {
                 prefWidth = 1800.0
                 prefHeight = 800.0
                 animated = false
                 createSymbols = false
                 isLegendVisible = false
-                yAxis.label = "Влажность, %"
+                yAxis.label = "Температура, °C"
                 xAxis.label = "Время, сек"
             }
             button("Обновить") {
@@ -126,19 +124,19 @@ class GraphicRealTimeWindow : View("Графики в реальном врем�
 
         var step = 1
 
-        if (listOfValuesTest1.size > 1000) {
-            step = (listOfValuesTest1.size - listOfValuesTest1.size % 1000) / 1000
+        if (listOfValuesTempTest1.size > 1000) {
+            step = (listOfValuesTempTest1.size - listOfValuesTempTest1.size % 1000) / 1000
         }
 
         val valuesForTable1 = arrayListOf<Double>()
         val valuesForTable2 = arrayListOf<Double>()
         val valuesForTable3 = arrayListOf<Double>()
-        for (i in listOfValuesTest1.indices step step) {
-            valuesForTable1.add(listOfValuesTest1[i].replace(',', '.').toDouble())
-            valuesForTable2.add(listOfValuesTest2[i].replace(',', '.').toDouble())
-            valuesForTable3.add(listOfValuesTest3[i].replace(',', '.').toDouble())
+        for (i in listOfValuesTempTest1.indices step step) {
+            valuesForTable1.add(listOfValuesTempTest1[i].replace(',', '.').toDouble())
+            valuesForTable2.add(listOfValuesTempTest2[i].replace(',', '.').toDouble())
+            valuesForTable3.add(listOfValuesTempTest3[i].replace(',', '.').toDouble())
         }
-        if (listOfValuesTest1.size > 1000) {
+        if (listOfValuesTempTest1.size > 1000) {
             valuesForTable1.forEach {
                 series1.data.add(XYChart.Data(sec * step, it))
                 sec++

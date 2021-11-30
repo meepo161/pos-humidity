@@ -8,6 +8,7 @@ import javafx.scene.shape.Circle
 import javafx.stage.Modality
 import ru.avem.poshumidity.controllers.MainViewController
 import ru.avem.poshumidity.entities.TableValuesTest
+import ru.avem.poshumidity.utils.CallbackTimer
 import ru.avem.poshumidity.utils.callKeyBoard
 import ru.avem.poshumidity.view.Styles.Companion.extraHard
 import ru.avem.poshumidity.view.Styles.Companion.highHard
@@ -41,6 +42,16 @@ class MainView : View("Комплексный стенд для испытани
 
     var tfCipher1: TextField by singleAssign()
     var tfProductNumber1: TextField by singleAssign()
+
+    override fun onDock() {
+        super.onDock()
+        CallbackTimer(
+            tickTimes = 54,
+            tickPeriod = 1.hours,
+            onStartJob = { println("Started") },
+            tickJob = { println("Tick") },
+            onFinishJob = { println("Finish") })
+    }
 
     override val root = borderpane {
         maxWidth = 1920.0
@@ -88,6 +99,24 @@ class MainView : View("Комплексный стенд для испытани
                                 resizable = false,
                                 owner = this@MainView.currentWindow
                             )
+                        }
+                    }
+                    item("Администрирование") {
+                        action {
+
+                            val dialog: Dialog<*> = TextInputDialog("")
+                            dialog.title = "Авторизация"
+                            dialog.headerText = "Вход закрыт"
+                            dialog.contentText = "Введите пароль: "
+                            dialog.showAndWait()
+                            if (dialog.result == "4444") {
+                                find<AdminWindow>().openModal(
+                                    modality = Modality.WINDOW_MODAL,
+                                    escapeClosesWindow = true,
+                                    resizable = false,
+                                    owner = this@MainView.currentWindow
+                                )
+                            }
                         }
                     }
                 }
@@ -181,15 +210,28 @@ class MainView : View("Комплексный стенд для испытани
                         }
                     }
 
-                    button("Отобразить графики") {
-                        action {
-                            find<GraphicRealTimeWindow>().openModal(
-                                modality = Modality.WINDOW_MODAL,
-                                escapeClosesWindow = true,
-                                resizable = false,
-                                owner = this@MainView.currentWindow
-                            )
+                    hbox(spacing = 16, alignment = Pos.CENTER) {
+                        button("Графики влажности") {
+                            action {
+                                find<GraphicRealTimeWindow>().openModal(
+                                    modality = Modality.WINDOW_MODAL,
+                                    escapeClosesWindow = true,
+                                    resizable = false,
+                                    owner = this@MainView.currentWindow
+                                )
+                            }
                         }
+                        button("Графики температуры") {
+                            action {
+                                find<GraphicTempRealTimeWindow>().openModal(
+                                    modality = Modality.WINDOW_MODAL,
+                                    escapeClosesWindow = true,
+                                    resizable = false,
+                                    owner = this@MainView.currentWindow
+                                )
+                            }
+                        }
+
                     }
 
                     hbox(spacing = 16) {

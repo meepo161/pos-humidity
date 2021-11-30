@@ -13,11 +13,24 @@ import org.openxmlformats.schemas.drawingml.x2006.chart.CTBoolean
 import ru.avem.poshumidity.app.Pos
 import ru.avem.poshumidity.database.entities.Protocol
 import ru.avem.poshumidity.database.entities.ProtocolSingle
+import ru.avem.poshumidity.utils.Singleton.maxIndex1
+import ru.avem.poshumidity.utils.Singleton.maxIndex2
+import ru.avem.poshumidity.utils.Singleton.maxIndex3
+import ru.avem.poshumidity.utils.Singleton.maxIndexTemp1
+import ru.avem.poshumidity.utils.Singleton.maxIndexTemp2
+import ru.avem.poshumidity.utils.Singleton.maxIndexTemp3
+import ru.avem.poshumidity.utils.Singleton.minIndex1
+import ru.avem.poshumidity.utils.Singleton.minIndex2
+import ru.avem.poshumidity.utils.Singleton.minIndex3
+import ru.avem.poshumidity.utils.Singleton.minIndexTemp1
+import ru.avem.poshumidity.utils.Singleton.minIndexTemp2
+import ru.avem.poshumidity.utils.Singleton.minIndexTemp3
 import ru.avem.poshumidity.utils.Toast
 import ru.avem.poshumidity.utils.copyFileFromStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.*
 
 var TO_DESIRED_ROW = 0
 
@@ -182,6 +195,42 @@ fun fillParameters3(
         valuesForExcelTemp2.add(valuesTemp2[i])
         valuesForExcelTemp3.add(valuesTemp3[i])
     }
+    valuesForExcel1.indexOf(Collections.min(valuesForExcel1)).apply {
+        minIndex1 = valuesForExcel1[this]
+    }
+    valuesForExcel2.indexOf(Collections.min(valuesForExcel2)).apply {
+        minIndex2 = valuesForExcel2[this]
+    }
+    valuesForExcel3.indexOf(Collections.min(valuesForExcel3)).apply {
+        minIndex3 = valuesForExcel3[this]
+    }
+    valuesForExcel1.indexOf(Collections.max(valuesForExcel1)).apply {
+        maxIndex1 = valuesForExcel1[this]
+    }
+    valuesForExcel2.indexOf(Collections.max(valuesForExcel2)).apply {
+        maxIndex2 = valuesForExcel2[this]
+    }
+    valuesForExcel3.indexOf(Collections.max(valuesForExcel3)).apply {
+        maxIndex3 = valuesForExcel3[this]
+    }
+    valuesForExcelTemp1.indexOf(Collections.min(valuesForExcelTemp1)).apply {
+        minIndexTemp1 = valuesForExcelTemp1[this]
+    }
+    valuesForExcelTemp2.indexOf(Collections.min(valuesForExcelTemp2)).apply {
+        minIndexTemp2 = valuesForExcelTemp2[this]
+    }
+    valuesForExcelTemp3.indexOf(Collections.min(valuesForExcelTemp3)).apply {
+        minIndexTemp3 = valuesForExcelTemp3[this]
+    }
+    valuesForExcelTemp1.indexOf(Collections.max(valuesForExcelTemp1)).apply {
+        maxIndexTemp1 = valuesForExcelTemp1[this]
+    }
+    valuesForExcelTemp2.indexOf(Collections.max(valuesForExcelTemp2)).apply {
+        maxIndexTemp2 = valuesForExcelTemp2[this]
+    }
+    valuesForExcelTemp3.indexOf(Collections.max(valuesForExcelTemp3)).apply {
+        maxIndexTemp3 = valuesForExcelTemp3[this]
+    }
     val sheet = wb.getSheetAt(0)
     var row: Row
     val cellStyle: XSSFCellStyle = generateStyles(wb) as XSSFCellStyle
@@ -263,28 +312,63 @@ private fun drawLineChart3(workbook: XSSFWorkbook) {
     val graphHeight = 41
     val graphSpace = graphHeight + 3
     val lineChart1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChart1, timeData1, valueData1, "Время, час.      Начало(ДТВ1)", "Влажность, %")
+    drawLineChart3(
+        lineChart1,
+        timeData1,
+        valueData1,
+        "Время, час.      Начало(ДТВ1)",
+        "Влажность, %",
+        minIndex1,
+        maxIndex1
+    )
     lastRowForGraph += graphSpace
     val lineChart2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChart2, timeData1, valueData2, "Время, час.      Середина(ДТВ2)", "Влажность, %")
+    drawLineChart3(
+        lineChart2,
+        timeData1,
+        valueData2,
+        "Время, час.      Середина(ДТВ2)",
+        "Влажность, %",
+        minIndex2,
+        maxIndex2
+    )
     lastRowForGraph += graphSpace
     val lineChart3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChart3, timeData1, valueData3, "Время, час.      Конец(ДТВ3)", "Влажность, %")
+    drawLineChart3(
+        lineChart3,
+        timeData1,
+        valueData3,
+        "Время, час.      Конец(ДТВ3)",
+        "Влажность, %",
+        minIndex3,
+        maxIndex3
+    )
     lastRowForGraph += graphSpace
     val lineChartTemp1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChartTemp1, timeData1, valueDataTemp1, "Время, час.      Начало(ДТВ1)", "Температура, °C")
+    drawLineChart3(
+        lineChartTemp1, timeData1, valueDataTemp1, "Время, час.      Начало(ДТВ1)", "Температура, °C",
+        minIndexTemp1,
+        maxIndexTemp1
+    )
     lastRowForGraph += graphSpace
     val lineChartTemp2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChartTemp2, timeData1, valueDataTemp2, "Время, час.      Середина(ДТВ2)", "Температура, °C")
+    drawLineChart3(
+        lineChartTemp2, timeData1, valueDataTemp2, "Время, час.      Середина(ДТВ2)", "Температура, °C",
+        minIndexTemp2,
+        maxIndexTemp2
+    )
     lastRowForGraph += graphSpace
     val lineChartTemp3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(lineChartTemp3, timeData1, valueDataTemp3, "Время, час.      Конец(ДТВ3)", "Температура, °C")
+    drawLineChart3(
+        lineChartTemp3, timeData1, valueDataTemp3, "Время, час.      Конец(ДТВ3)", "Температура, °C",
+        minIndexTemp3,
+        maxIndexTemp3
+    )
 }
 
 private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int, col1: Int = 1, col2: Int = 19): XSSFChart {
     val drawing = sheet.createDrawingPatriarch()
     val anchor = drawing.createAnchor(0, 0, 0, 0, col1, rowStart, col2, rowEnd)
-
     return drawing.createChart(anchor)
 }
 
@@ -292,7 +376,7 @@ private fun drawLineChart3(
     lineChart: XSSFChart,
     xAxisData: ChartDataSource<Number>,
     yAxisData: ChartDataSource<Number>,
-    section: String = "", title: String = ""
+    section: String = "", title: String = "", min: Double = 0.0, max: Double = 0.0
 ) {
     val data = lineChart.chartDataFactory.createLineChartData()
 
@@ -305,6 +389,9 @@ private fun drawLineChart3(
     lineChart.plot(data, xAxis, yAxis)
     lineChart.axes[0].setTitle(section)
     lineChart.axes[1].setTitle(title)
+    lineChart.axes[1].minimum = 0.0/*(min.toInt() - 2).toDouble()*/
+    lineChart.axes[1].maximum = 100.0/*(max.toInt() + 2).toDouble()*/
+    lineChart.axes[1].majorUnit = 5.0
 
     val plotArea = lineChart.ctChart.plotArea
     plotArea.lineChartArray[0].smooth
