@@ -148,7 +148,7 @@ class MainView : View("Комплексный стенд для испытани
                         tfCipher1 = textfield {
                             callKeyBoard()
                         }
-                        label("Номер изделия: ")
+                        label("Производственный номер: ")
                         tfProductNumber1 = textfield {
                             callKeyBoard()
 

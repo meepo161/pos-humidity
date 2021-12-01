@@ -1,15 +1,21 @@
 package ru.avem.poshumidity.protocol
 
+import javafx.scene.chart.Axis
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.ss.usermodel.charts.AxisPosition
 import org.apache.poi.ss.usermodel.charts.ChartDataSource
 import org.apache.poi.ss.usermodel.charts.DataSources
 import org.apache.poi.ss.util.CellRangeAddress
+import org.apache.poi.xddf.usermodel.chart.AxisCrosses
+import org.apache.poi.xddf.usermodel.chart.AxisTickMark
 import org.apache.poi.xssf.usermodel.XSSFCellStyle
 import org.apache.poi.xssf.usermodel.XSSFChart
 import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.openxmlformats.schemas.drawingml.x2006.chart.CTBoolean
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTTickMark
+import org.openxmlformats.schemas.drawingml.x2006.chart.STTickMark
+import org.openxmlformats.schemas.drawingml.x2006.main.STPenAlignment
 import ru.avem.poshumidity.app.Pos
 import ru.avem.poshumidity.database.entities.Protocol
 import ru.avem.poshumidity.database.entities.ProtocolSingle
@@ -82,6 +88,38 @@ fun saveProtocolAsWorkbook(protocol: Protocol, path: String = "protocol.xlsx") {
                 15
             )
             drawLineChart3(wb)
+
+            val sheet2 = wb.getSheetAt(1)
+            for (iRow in 0 until 200) {
+                val row = sheet2.getRow(iRow)
+                if (row != null) {
+                    for (iCell in 0 until 200) {
+                        val cell = row.getCell(iCell)
+                        if (cell != null && (cell.cellType == CellType.STRING)) {
+                            when (cell.stringCellValue) {
+                                "#PROTOCOL_NUMBER#" -> cell.setCellValue(protocol.id.toString())
+                                "#DATE#" -> cell.setCellValue(protocol.date)
+                                "#TIME#" -> cell.setCellValue(protocol.time)
+                                "#DATE_END#" -> cell.setCellValue(protocol.dateEnd)
+                                "#TIME_END#" -> cell.setCellValue(protocol.timeEnd)
+                                "#CIPHER1#" -> cell.setCellValue(protocol.cipher1)
+                                "#NUMBER_PRODUCT1#" -> cell.setCellValue(protocol.productNumber1)
+                                "#OPERATOR#" -> cell.setCellValue(protocol.operator)
+                                "#NUMBER_DATE_ATTESTATION#" -> cell.setCellValue(protocol.NUMBER_DATE_ATTESTATION)
+                                "#NAME_OF_OPERATION#" -> cell.setCellValue(protocol.NAME_OF_OPERATION)
+                                "#NUMBER_CONTROLLER#" -> cell.setCellValue(protocol.NUMBER_CONTROLLER)
+
+                                else -> {
+                                    if (cell.stringCellValue.contains("#")) {
+                                        cell.setCellValue("")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             sheet.protectSheet("avem")
             val outStream = ByteArrayOutputStream()
             wb.write(outStream)
@@ -258,7 +296,7 @@ private fun drawLineChart(workbook: XSSFWorkbook) {
     val valueData = DataSources.fromNumericCellRange(sheet, CellRangeAddress(16, lastRowIndex, 1, 1))
 
     var lineChart = createLineChart(sheet)
-    drawLineChart3(lineChart, timeData, valueData)
+    drawLineChart3(lineChart, timeData, valueData, valueData)
 }
 
 private fun createLineChart(sheet: XSSFSheet): XSSFChart {
@@ -308,16 +346,17 @@ private fun drawLineChart3(workbook: XSSFWorkbook) {
     val valueDataTemp2 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
     val valueDataTemp3 = DataSources.fromNumericCellRange(sheet, CellRangeAddress(15, lastRowIndex, ++i, i))
 
-    var lastRowForGraph = 0
+    var lastRowForGraph = 1
     val graphHeight = 41
-    val graphSpace = graphHeight + 3
+    val graphSpace = graphHeight + 9
     val lineChart1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
     drawLineChart3(
         lineChart1,
         timeData1,
         valueData1,
+        valueDataTemp1,
         "Время, час.      Начало(ДТВ1)",
-        "Влажность, %",
+        "Температура, °C                                                                                               Влажность, %",
         minIndex1,
         maxIndex1
     )
@@ -327,8 +366,9 @@ private fun drawLineChart3(workbook: XSSFWorkbook) {
         lineChart2,
         timeData1,
         valueData2,
+        valueDataTemp2,
         "Время, час.      Середина(ДТВ2)",
-        "Влажность, %",
+        "Температура, °C                                                                                               Влажность, %",
         minIndex2,
         maxIndex2
     )
@@ -338,32 +378,33 @@ private fun drawLineChart3(workbook: XSSFWorkbook) {
         lineChart3,
         timeData1,
         valueData3,
+        valueDataTemp3,
         "Время, час.      Конец(ДТВ3)",
-        "Влажность, %",
+        "Температура, °C                                                                                               Влажность, %",
         minIndex3,
         maxIndex3
     )
     lastRowForGraph += graphSpace
-    val lineChartTemp1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(
-        lineChartTemp1, timeData1, valueDataTemp1, "Время, час.      Начало(ДТВ1)", "Температура, °C",
-        minIndexTemp1,
-        maxIndexTemp1
-    )
-    lastRowForGraph += graphSpace
-    val lineChartTemp2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(
-        lineChartTemp2, timeData1, valueDataTemp2, "Время, час.      Середина(ДТВ2)", "Температура, °C",
-        minIndexTemp2,
-        maxIndexTemp2
-    )
-    lastRowForGraph += graphSpace
-    val lineChartTemp3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
-    drawLineChart3(
-        lineChartTemp3, timeData1, valueDataTemp3, "Время, час.      Конец(ДТВ3)", "Температура, °C",
-        minIndexTemp3,
-        maxIndexTemp3
-    )
+//    val lineChartTemp1 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+//    drawLineChart3(
+//        lineChartTemp1, timeData1, valueDataTemp1, "Время, час.      Начало(ДТВ1)", "Температура, °C",
+//        minIndexTemp1,
+//        maxIndexTemp1
+//    )
+//    lastRowForGraph += graphSpace
+//    val lineChartTemp2 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+//    drawLineChart3(
+//        lineChartTemp2, timeData1, valueDataTemp2, "Время, час.      Середина(ДТВ2)", "Температура, °C",
+//        minIndexTemp2,
+//        maxIndexTemp2
+//    )
+//    lastRowForGraph += graphSpace
+//    val lineChartTemp3 = createLineChart(sheet2, lastRowForGraph, lastRowForGraph + graphHeight)
+//    drawLineChart3(
+//        lineChartTemp3, timeData1, valueDataTemp3, "Время, час.      Конец(ДТВ3)", "Температура, °C",
+//        minIndexTemp3,
+//        maxIndexTemp3
+//    )
 }
 
 private fun createLineChart(sheet: XSSFSheet, rowStart: Int, rowEnd: Int, col1: Int = 1, col2: Int = 19): XSSFChart {
@@ -376,6 +417,7 @@ private fun drawLineChart3(
     lineChart: XSSFChart,
     xAxisData: ChartDataSource<Number>,
     yAxisData: ChartDataSource<Number>,
+    yAxisData2: ChartDataSource<Number>,
     section: String = "", title: String = "", min: Double = 0.0, max: Double = 0.0
 ) {
     val data = lineChart.chartDataFactory.createLineChartData()
@@ -385,6 +427,7 @@ private fun drawLineChart3(
     yAxis.crosses = org.apache.poi.ss.usermodel.charts.AxisCrosses.AUTO_ZERO
 
     val series = data.addSeries(xAxisData, yAxisData)
+    val series2 = data.addSeries(xAxisData, yAxisData2)
     series.setTitle("График")
     lineChart.plot(data, xAxis, yAxis)
     lineChart.axes[0].setTitle(section)
@@ -393,12 +436,23 @@ private fun drawLineChart3(
     lineChart.axes[1].maximum = 100.0/*(max.toInt() + 2).toDouble()*/
     lineChart.axes[1].majorUnit = 5.0
 
-    val plotArea = lineChart.ctChart.plotArea
-    plotArea.lineChartArray[0].smooth
-    val ctBool = CTBoolean.Factory.newInstance()
-    ctBool.`val` = false
-    plotArea.lineChartArray[0].smooth = ctBool
-    for (series in plotArea.lineChartArray[0].serArray) {
-        series.smooth = ctBool
-    }
+    lineChart.axes[0].majorTickMark = AxisTickMark.IN
+    lineChart.axes[0].minorTickMark = AxisTickMark.IN
+
+//    val plotArea = lineChart.ctChart.plotArea
+//    plotArea.lineChartArray[0].smooth
+//    val ctBool = CTBoolean.Factory.newInstance()
+//    ctBool.`val` = false
+//    plotArea.lineChartArray[0].smooth = ctBool
+//    for (series in plotArea.lineChartArray[0].serArray) {
+//        series.smooth = ctBool
+//    }
+//    plotArea.catAxArray[0].addNewMajorGridlines()
+
+
+//    plotArea.catAxList[0].majorGridlines.spPr
+//    plotArea.catAxArray[0].addNewMinorGridlines()
+
+//    plotArea.valAxArray[0].addNewMajorGridlines()
+//    plotArea.valAxArray[0].addNewMinorGridlines()
 }
