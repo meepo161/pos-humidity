@@ -20,9 +20,9 @@ object CommunicationModel {
         DTV3("ДТВ")
     }
 
-    private var isConnected = false
+    var isConnected = false
 
-    private val connection = Connection(
+    val connection = Connection(
             adapterName = "CP2103 USB to RS-485",
             serialParameters = SerialParameters(8, 0, 1, 9600),
             timeoutRead = 100,
@@ -38,7 +38,7 @@ object CommunicationModel {
             DeviceID.DD2 to OwenPrController(DeviceID.DD2.toString(), modbusAdapter, 1),
             DeviceID.DTV1 to Dtv02Controller(DeviceID.DTV1.toString(), modbusAdapter, 2),
             DeviceID.DTV2 to Dtv02Controller(DeviceID.DTV2.toString(), modbusAdapter, 3),
-            DeviceID.DTV3 to Dtv02Controller(DeviceID.DTV3.toString(), modbusAdapter, 6)
+            DeviceID.DTV3 to Dtv02Controller(DeviceID.DTV3.toString(), modbusAdapter, 4)
     )
 
     init {
@@ -77,6 +77,7 @@ object CommunicationModel {
 
     fun clearPollingRegisters() {
         deviceControllers.values.forEach(IDeviceController::removeAllPollingRegisters)
+        deviceControllers.values.forEach(IDeviceController::removeAllWritingRegisters)
     }
 
     fun removePollingRegister(deviceID: DeviceID, registerID: String) {

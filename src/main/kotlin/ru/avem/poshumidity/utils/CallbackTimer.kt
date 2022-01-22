@@ -34,8 +34,12 @@ class CallbackTimer(
 
     init {
         thread(isDaemon = true) {
-            onStartJob(this)
-            timer.schedule(timerTask, delay.toMillis().toLong(), tickPeriod.toMillis().toLong())
+            try {
+                onStartJob(this)
+                timer.schedule(timerTask, delay.toMillis().toLong(), tickPeriod.toMillis().toLong())
+            } catch (ignored: Exception) {
+
+            }
         }
     }
 
@@ -44,8 +48,12 @@ class CallbackTimer(
     override fun getName() = timerName
 
     override fun stop() {
-        timer.cancel()
-        isRunning = false
+        try {
+            timer.cancel()
+            isRunning = false
+        } catch (ignored: Exception) {
+
+        }
     }
 }
 

@@ -57,13 +57,13 @@ interface IDeviceController {
                 block()
                 requestSuccessCount++
                 break
-            } catch (e: TransportException) {
+            } catch (e: ru.avem.kserialpooler.communication.utils.TransportException) {
                 val message =
                     "repeat $attempt/${connection.attemptCount} attempts with common success rate = ${(requestSuccessCount) * 100 / requestTotalCount}%"
                 KotlinLogging.logger(name).info(message)
 
                 if (attempt == connection.attemptCount) {
-                    throw TransportException(message)
+                    throw ru.avem.kserialpooler.communication.utils.TransportException(message)
                 }
             }
             sleep(10)

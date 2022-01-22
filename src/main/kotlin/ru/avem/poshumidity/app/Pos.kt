@@ -1,5 +1,6 @@
 package ru.avem.poshumidity.app
 
+import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.scene.input.KeyCombination
 import javafx.stage.Stage
@@ -8,6 +9,7 @@ import ru.avem.poshumidity.view.AuthorizationView
 import ru.avem.poshumidity.view.Styles
 import tornadofx.App
 import tornadofx.FX
+import kotlin.system.exitProcess
 
 class Pos : App(AuthorizationView::class, Styles::class) {
 
@@ -30,5 +32,6 @@ class Pos : App(AuthorizationView::class, Styles::class) {
 
     override fun stop() {
         isAppRunning = false
+        exitProcess(0)
     }
 }

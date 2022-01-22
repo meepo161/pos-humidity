@@ -82,12 +82,12 @@ class MainViewController : Controller() {
                         }
                     }
                 } else {
-                    runLater {
-                        view.comIndicate.fill = State.BAD.c
-                        view.labelTestStatusEnds.text = "Нет связи со стендом. Проверьте подключение."
-                        view.buttonStart.isDisable = true
-                        view.buttonStop.isDisable = true
-                    }
+//                    runLater {
+//                        view.comIndicate.fill = State.BAD.c
+//                        view.labelTestStatusEnds.text = "Нет связи со стендом. Проверьте подключение."
+//                        view.buttonStart.isDisable = true
+//                        view.buttonStop.isDisable = true
+//                    }
                 }
                 sleep(1000)
             }
@@ -144,6 +144,10 @@ class MainViewController : Controller() {
         } catch (e: Exception) {
             Toast.makeText("Проверьте правильность введенных данных времени").show(Toast.ToastType.ERROR)
             view.textFieldTime.clear()
+        }
+        runLater {
+            view.labelTimeRemaining.text =
+                "Ожидайте поднятия влажности до ${view.textFieldHumidity.text}%"
         }
     }
 }

@@ -1,5 +1,6 @@
 package ru.avem.poshumidity.protocol
 
+import com.microsoft.schemas.vml.STExt
 import javafx.scene.chart.Axis
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.ss.usermodel.charts.AxisPosition
@@ -8,13 +9,15 @@ import org.apache.poi.ss.usermodel.charts.DataSources
 import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.xddf.usermodel.chart.AxisCrosses
 import org.apache.poi.xddf.usermodel.chart.AxisTickMark
+import org.apache.poi.xddf.usermodel.chart.XDDFChartAxis
 import org.apache.poi.xssf.usermodel.XSSFCellStyle
 import org.apache.poi.xssf.usermodel.XSSFChart
 import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import org.openxmlformats.schemas.drawingml.x2006.chart.CTBoolean
-import org.openxmlformats.schemas.drawingml.x2006.chart.CTTickMark
-import org.openxmlformats.schemas.drawingml.x2006.chart.STTickMark
+import org.apache.xmlbeans.XmlObject
+import org.openxmlformats.schemas.drawingml.x2006.chart.*
+import org.openxmlformats.schemas.drawingml.x2006.chart.impl.STTickLblPosImpl
+import org.openxmlformats.schemas.drawingml.x2006.chart.impl.STTickMarkImpl
 import org.openxmlformats.schemas.drawingml.x2006.main.STPenAlignment
 import ru.avem.poshumidity.app.Pos
 import ru.avem.poshumidity.database.entities.Protocol
@@ -37,6 +40,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.*
+import kotlin.math.absoluteValue
 
 var TO_DESIRED_ROW = 0
 
@@ -428,6 +432,10 @@ private fun drawLineChart3(
 
     val series = data.addSeries(xAxisData, yAxisData)
     val series2 = data.addSeries(xAxisData, yAxisData2)
+    val plotArea = lineChart.ctChart.plotArea
+    var ctBoolean = CTBoolean.Factory.newInstance()
+    ctBoolean.`val` = false
+    plotArea.catAxArray[0].auto = ctBoolean
     series.setTitle("График")
     lineChart.plot(data, xAxis, yAxis)
     lineChart.axes[0].setTitle(section)
@@ -435,11 +443,15 @@ private fun drawLineChart3(
     lineChart.axes[1].minimum = 0.0/*(min.toInt() - 2).toDouble()*/
     lineChart.axes[1].maximum = 100.0/*(max.toInt() + 2).toDouble()*/
     lineChart.axes[1].majorUnit = 5.0
+//    plotArea.catAxArray[0].addNewCrossAx().`val` = 100
+//
+//    lineChart.getCTChart().getPlotArea().getCatAxArray(0).addNewTickLblSkip().setVal(2); // label only every second mark
+//    lineChart.getCTChart().getPlotArea().getCatAxArray(0).addNewTickMarkSkip().setVal(2); // show only every second mark
+//    lineChart.getCTChart().getPlotArea().getCatAxArray(0).addNewLblOffset().setVal(200);
 
-    lineChart.axes[0].majorTickMark = AxisTickMark.IN
-    lineChart.axes[0].minorTickMark = AxisTickMark.IN
 
-//    val plotArea = lineChart.ctChart.plotArea
+
+
 //    plotArea.lineChartArray[0].smooth
 //    val ctBool = CTBoolean.Factory.newInstance()
 //    ctBool.`val` = false
