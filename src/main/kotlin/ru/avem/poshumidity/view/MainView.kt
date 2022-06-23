@@ -103,12 +103,12 @@ class MainView : View("Комплексный стенд для испытани
                     }
                     item("Администрирование") {
                         action {
-
                             val dialog: Dialog<*> = TextInputDialog("")
                             dialog.title = "Авторизация"
                             dialog.headerText = "Вход закрыт"
                             dialog.contentText = "Введите пароль: "
                             dialog.showAndWait()
+
                             if (dialog.result == "4444") {
                                 find<AdminWindow>().openModal(
                                     modality = Modality.WINDOW_MODAL,

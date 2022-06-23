@@ -235,6 +235,7 @@ class Test1Controller : TestController() {
     @ExperimentalTime
     fun startTest() {
         thread(isDaemon = true) {
+
             if (mainView.textFieldHumidity.text.isEmpty() || !mainView.textFieldHumidity.text.replace(",", ".")
                     .isDouble()
             ) {
@@ -328,59 +329,59 @@ class Test1Controller : TestController() {
                 thread(isDaemon = true) {
                     var i = 0
                     while (controller.isExperimentRunning && isDevicesResponding()) {
-                        if (dtv1.isResponding) {
-                            val humidity1 = dtv1.getRegisterById(Dtv02Model.HUMIDITY)
-                            dtv1.readRegister(humidity1)
-                            measuringHumidity1 = when {
-                                humidity1.value.toDouble() < 6 -> {
-                                    lastMeasuringHumidity1
-                                }
-                                humidity1.value.toDouble() <= 100 - coefValues.COEF1.toInt() -> {
-                                    humidity1.value.toDouble() + coefValues.COEF1.toInt()
-                                }
-                                humidity1.value.toDouble() >= 100 -> {
-                                    100.0
-                                }
-                                else -> {
-                                    humidity1.value.toDouble()
-                                }
-                            }
-                            lastMeasuringHumidity1 = measuringHumidity1
-                            val temp1 = dtv1.getRegisterById(Dtv02Model.TEMPERATURE)
-                            dtv1.readRegister(temp1)
-                            measuringTemp1 = if(temp1.value.toDouble() < 10){
-                                lastMeasuringTemp1
-                            } else {
-                                temp1.value.toDouble()
-                            }
-                            lastMeasuringTemp1 = measuringTemp1
-                        }
-                        if (dtv2.isResponding) {
-                            val humidity2 = dtv2.getRegisterById(Dtv02Model.HUMIDITY)
-                            dtv2.readRegister(humidity2)
-                            measuringHumidity2 = when {
-                                humidity2.value.toDouble() < 6 -> {
-                                    measuringHumidity2
-                                }
-                                humidity2.value.toDouble() <= 100 - coefValues.COEF2.toInt() -> {
-                                    humidity2.value.toDouble() + coefValues.COEF2.toInt()
-                                }
-                                humidity2.value.toDouble() >= 100 -> {
-                                    100.0
-                                }
-                                else -> {
-                                    humidity2.value.toDouble()
-                                }
-                            }
-                            val temp2 = dtv2.getRegisterById(Dtv02Model.TEMPERATURE)
-                            dtv2.readRegister(temp2)
-                            measuringTemp2 = if(temp2.value.toDouble() < 10){
-                                lastMeasuringTemp2
-                            } else {
-                                temp2.value.toDouble()
-                            }
-                            lastMeasuringTemp2 = measuringTemp2
-                        }
+//                        if (dtv1.isResponding) {
+//                            val humidity1 = dtv1.getRegisterById(Dtv02Model.HUMIDITY)
+//                            dtv1.readRegister(humidity1)
+//                            measuringHumidity1 = when {
+//                                humidity1.value.toDouble() < 6 -> {
+//                                    lastMeasuringHumidity1
+//                                }
+//                                humidity1.value.toDouble() <= 100 - coefValues.COEF1.toInt() -> {
+//                                    humidity1.value.toDouble() + coefValues.COEF1.toInt()
+//                                }
+//                                humidity1.value.toDouble() >= 100 -> {
+//                                    100.0
+//                                }
+//                                else -> {
+//                                    humidity1.value.toDouble()
+//                                }
+//                            }
+//                            lastMeasuringHumidity1 = measuringHumidity1
+//                            val temp1 = dtv1.getRegisterById(Dtv02Model.TEMPERATURE)
+//                            dtv1.readRegister(temp1)
+//                            measuringTemp1 = if (temp1.value.toDouble() < 10) {
+//                                lastMeasuringTemp1
+//                            } else {
+//                                temp1.value.toDouble()
+//                            }
+//                            lastMeasuringTemp1 = measuringTemp1
+//                        }
+//                        if (dtv2.isResponding) {
+//                            val humidity2 = dtv2.getRegisterById(Dtv02Model.HUMIDITY)
+//                            dtv2.readRegister(humidity2)
+//                            measuringHumidity2 = when {
+//                                humidity2.value.toDouble() < 6 -> {
+//                                    measuringHumidity2
+//                                }
+//                                humidity2.value.toDouble() <= 100 - coefValues.COEF2.toInt() -> {
+//                                    humidity2.value.toDouble() + coefValues.COEF2.toInt()
+//                                }
+//                                humidity2.value.toDouble() >= 100 -> {
+//                                    100.0
+//                                }
+//                                else -> {
+//                                    humidity2.value.toDouble()
+//                                }
+//                            }
+//                            val temp2 = dtv2.getRegisterById(Dtv02Model.TEMPERATURE)
+//                            dtv2.readRegister(temp2)
+//                            measuringTemp2 = if (temp2.value.toDouble() < 10) {
+//                                lastMeasuringTemp2
+//                            } else {
+//                                temp2.value.toDouble()
+//                            }
+//                            lastMeasuringTemp2 = measuringTemp2
+//                        }
                         if (dtv3.isResponding) {
                             val humidity3 = dtv3.getRegisterById(Dtv02Model.HUMIDITY)
                             dtv3.readRegister(humidity3)
@@ -400,7 +401,7 @@ class Test1Controller : TestController() {
                             }
                             val temp3 = dtv3.getRegisterById(Dtv02Model.TEMPERATURE)
                             dtv3.readRegister(temp3)
-                            measuringTemp3 = if(temp3.value.toDouble() < 10){
+                            measuringTemp3 = if (temp3.value.toDouble() < 10) {
                                 lastMeasuringTemp3
                             } else {
                                 temp3.value.toDouble()
@@ -432,7 +433,7 @@ class Test1Controller : TestController() {
 //                                i = 0
 //                            } //TODO на случай если не поможет
 //                        }
-                        sleep(1000)
+                        sleep(3000)
                     }
                 }
 
